@@ -1,16 +1,20 @@
+// features/driver/domain/entities/driver_profile_entity.dart
+
 // ← معلومات السائق
 class DriverInfoEntity {
   final String fullName;
+  final String firstName; // ← الاسم الأول فقط للهيدر
   final String idNumber;
   final String phone1;
-  final String? phone2; // ← رقم هاتف 2 (اختياري)
+  final String? phone2;
   final String licenseNumber;
-  final String licenseGrade; // ← درجة الرخصة
+  final String licenseGrade;
   final String licenseExpiry;
   final String medicalExpiry;
 
   const DriverInfoEntity({
     required this.fullName,
+    required this.firstName,
     required this.idNumber,
     required this.phone1,
     this.phone2,
@@ -21,8 +25,12 @@ class DriverInfoEntity {
   });
 
   factory DriverInfoEntity.fromJson(Map<String, dynamic> json) {
+    final fullName = json['full_name'] ?? '';
+    final parts = fullName.trim().split(' ');
+    final firstName = parts.isNotEmpty ? parts.first : fullName;
     return DriverInfoEntity(
-      fullName: json['full_name'] ?? '',
+      fullName: fullName,
+      firstName: json['first_name'] ?? firstName,
       idNumber: json['id_number'] ?? '',
       phone1: json['phone1'] ?? '',
       phone2: json['phone2'],
@@ -36,13 +44,19 @@ class DriverInfoEntity {
 
 // ← معلومات الخط
 class LineInfoEntity {
-  final String lineNumber; // ← رقم مجرى الخط
-  final String lineName; // ← اسم الخط (بيت لحم - الخليل)
-  final String passengerFare; // ← أجرة الراكب
+  final String lineNumber;
+  final String lineName;
+  final String lineFrom; // ← من
+  final String lineTo; // ← إلى
+  final String route; // ← مسار الخط
+  final String passengerFare;
 
   const LineInfoEntity({
     required this.lineNumber,
     required this.lineName,
+    required this.lineFrom,
+    required this.lineTo,
+    required this.route,
     required this.passengerFare,
   });
 
@@ -50,46 +64,76 @@ class LineInfoEntity {
     return LineInfoEntity(
       lineNumber: json['line_number'] ?? '',
       lineName: json['line_name'] ?? '',
+      lineFrom: json['line_from'] ?? '',
+      lineTo: json['line_to'] ?? '',
+      route: json['route'] ?? '',
       passengerFare: json['passenger_fare'] ?? '',
+    );
+  }
+}
+
+// ← معلومات المالك
+class OwnerInfoEntity {
+  final String ownerName;
+  final String ownerId;
+  final String ownerPhone;
+
+  const OwnerInfoEntity({
+    required this.ownerName,
+    required this.ownerId,
+    required this.ownerPhone,
+  });
+
+  factory OwnerInfoEntity.fromJson(Map<String, dynamic> json) {
+    return OwnerInfoEntity(
+      ownerName: json['owner_name'] ?? '',
+      ownerId: json['owner_id'] ?? '',
+      ownerPhone: json['owner_phone'] ?? '',
     );
   }
 }
 
 // ← معلومات المركبة
 class VehicleInfoEntity {
-  final String vehicleNumber; // ← رقم المركبة
-  final String vehicleCode; // ← رقم كود السيارة
-  final String model; // ← الموديل
-  final String driverType; // ← نوع السائق
-  final String seats; // ← عدد المقاعد
-  final String operationExpiry; // ← انتهاء رخصة التشغيل
-  final String vehicleLicExpiry; // ← انتهاء رخصة السيارة
-  final String insuranceExpiry; // ← انتهاء تأمين السيارة
-  final String? chassisNumber; // ← رقم الشاصي (يضيفه الأدمن)
+  final String vehicleNumber;
+  final String vehicleCode;
+  final String chassisNumber;
+  final String company;
+  final String model;
+  final String productionYear;
+  final String seats;
+  final String operationExpiry;
+  final String vehicleLicExpiry;
+  final String insuranceExpiry;
+  final bool loadingAllowed; // ← حالة السماح بالتحميل
 
   const VehicleInfoEntity({
     required this.vehicleNumber,
     required this.vehicleCode,
+    required this.chassisNumber,
+    required this.company,
     required this.model,
-    required this.driverType,
+    required this.productionYear,
     required this.seats,
     required this.operationExpiry,
     required this.vehicleLicExpiry,
     required this.insuranceExpiry,
-    this.chassisNumber,
+    required this.loadingAllowed,
   });
 
   factory VehicleInfoEntity.fromJson(Map<String, dynamic> json) {
     return VehicleInfoEntity(
       vehicleNumber: json['vehicle_number'] ?? '',
       vehicleCode: json['vehicle_code'] ?? '',
+      chassisNumber: json['chassis_number'] ?? '',
+      company: json['company'] ?? '',
       model: json['model'] ?? '',
-      driverType: json['driver_type'] ?? '',
+      productionYear: json['production_year']?.toString() ?? '',
       seats: json['seats']?.toString() ?? '',
       operationExpiry: json['operation_expiry'] ?? '',
       vehicleLicExpiry: json['vehicle_lic_expiry'] ?? '',
       insuranceExpiry: json['insurance_expiry'] ?? '',
-      chassisNumber: json['chassis_number'],
+      loadingAllowed: json['loading_allowed'] ?? true,
     );
   }
 }

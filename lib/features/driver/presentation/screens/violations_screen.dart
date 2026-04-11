@@ -16,7 +16,6 @@ class ViolationsScreen extends StatefulWidget {
 
 class _ViolationsScreenState extends State<ViolationsScreen> {
   final _repo = ViolationRepositoryImpl();
-
   List<ViolationEntity> _violations = [];
   bool _isLoading = true;
   String _idNumber = '';
@@ -45,6 +44,7 @@ class _ViolationsScreenState extends State<ViolationsScreen> {
   }
 
   double get _totalAmount => _violations.fold(0.0, (sum, v) => sum + v.amount);
+
   bool get _hasBlockEntry => _violations.any((v) => v.blockEntry);
 
   @override
@@ -79,12 +79,17 @@ class _ViolationsScreenState extends State<ViolationsScreen> {
                       ? CrossAxisAlignment.end
                       : CrossAxisAlignment.start,
                   children: [
+                    // ← تنبيه المنع
                     if (_hasBlockEntry) _buildBlockWarning(),
                     if (_hasBlockEntry)
                       SizedBox(height: AppDimensions.spacingMedium(context)),
+
+                    // ← بطاقة الإجمالي
                     if (_violations.isNotEmpty) _buildTotalCard(),
                     if (_violations.isNotEmpty)
                       SizedBox(height: AppDimensions.spacingMedium(context)),
+
+                    // ← القائمة
                     if (_violations.isEmpty)
                       _buildEmptyState()
                     else
@@ -92,8 +97,8 @@ class _ViolationsScreenState extends State<ViolationsScreen> {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: _violations.length,
-                        itemBuilder: (context, index) =>
-                            _buildViolationCard(_violations[index]),
+                        itemBuilder: (_, i) =>
+                            _buildViolationCard(_violations[i]),
                       ),
                   ],
                 ),
@@ -163,57 +168,83 @@ class _ViolationsScreenState extends State<ViolationsScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          if (!l.isArabic)
-            Text(
-              '${_totalAmount.toStringAsFixed(2)} ₪',
-              style: GoogleFonts.cairo(
-                color: Colors.redAccent,
-                fontSize: AppDimensions.fontLarge(context),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          Row(
+          // ← عدد المخالفات
+          Column(
             children: [
-              if (l.isArabic) ...[
-                Text(
-                  l.totalViolations,
-                  style: GoogleFonts.cairo(
-                    color: _isDark ? AppColors.textSecondary : Colors.black54,
-                    fontSize: AppDimensions.fontSmall(context),
-                  ),
+              Text(
+                '${_violations.length}',
+                style: GoogleFonts.cairo(
+                  color: Colors.orange,
+                  fontSize: AppDimensions.fontXLarge(context),
+                  fontWeight: FontWeight.bold,
                 ),
-                SizedBox(width: AppDimensions.spacingSmall(context)),
-                Icon(
-                  Icons.account_balance_wallet_outlined,
-                  color: AppColors.primary,
-                  size: AppDimensions.iconSmall(context),
+              ),
+              Text(
+                l.totalCount,
+                style: GoogleFonts.cairo(
+                  color: _isDark ? AppColors.textSecondary : Colors.black54,
+                  fontSize: AppDimensions.fontXSmall(context),
                 ),
-              ] else ...[
-                Icon(
-                  Icons.account_balance_wallet_outlined,
-                  color: AppColors.primary,
-                  size: AppDimensions.iconSmall(context),
-                ),
-                SizedBox(width: AppDimensions.spacingSmall(context)),
-                Text(
-                  l.totalViolations,
-                  style: GoogleFonts.cairo(
-                    color: _isDark ? AppColors.textSecondary : Colors.black54,
-                    fontSize: AppDimensions.fontSmall(context),
-                  ),
-                ),
-              ],
+              ),
             ],
           ),
-          if (l.isArabic)
-            Text(
-              '${_totalAmount.toStringAsFixed(2)} ₪',
-              style: GoogleFonts.cairo(
-                color: Colors.redAccent,
-                fontSize: AppDimensions.fontLarge(context),
-                fontWeight: FontWeight.bold,
+
+          Container(
+            width: 0.5,
+            height: 40,
+            color: _isDark ? Colors.white12 : Colors.black12,
+          ),
+
+          // ← إجمالي المبالغ
+          Column(
+            children: [
+              Row(
+                children: [
+                  if (l.isArabic) ...[
+                    Text(
+                      l.totalViolations,
+                      style: GoogleFonts.cairo(
+                        color: _isDark
+                            ? AppColors.textSecondary
+                            : Colors.black54,
+                        fontSize: AppDimensions.fontXSmall(context),
+                      ),
+                    ),
+                    SizedBox(width: AppDimensions.spacingSmall(context)),
+                    Icon(
+                      Icons.account_balance_wallet_outlined,
+                      color: AppColors.primary,
+                      size: AppDimensions.iconSmall(context),
+                    ),
+                  ] else ...[
+                    Icon(
+                      Icons.account_balance_wallet_outlined,
+                      color: AppColors.primary,
+                      size: AppDimensions.iconSmall(context),
+                    ),
+                    SizedBox(width: AppDimensions.spacingSmall(context)),
+                    Text(
+                      l.totalViolations,
+                      style: GoogleFonts.cairo(
+                        color: _isDark
+                            ? AppColors.textSecondary
+                            : Colors.black54,
+                        fontSize: AppDimensions.fontXSmall(context),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-            ),
+              Text(
+                '${_totalAmount.toStringAsFixed(2)} ₪',
+                style: GoogleFonts.cairo(
+                  color: Colors.redAccent,
+                  fontSize: AppDimensions.fontLarge(context),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -265,6 +296,7 @@ class _ViolationsScreenState extends State<ViolationsScreen> {
       ),
       child: Column(
         children: [
+          // ── رأس البطاقة ────────────────────────────
           Container(
             width: double.infinity,
             padding: EdgeInsets.symmetric(
@@ -281,6 +313,7 @@ class _ViolationsScreenState extends State<ViolationsScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                // ← شارة المنع (يسار)
                 Row(
                   children: [
                     Icon(
@@ -301,6 +334,7 @@ class _ViolationsScreenState extends State<ViolationsScreen> {
                     ),
                   ],
                 ),
+                // ← رقم المخالفة (يمين)
                 Text(
                   violation.violationNumber,
                   style: GoogleFonts.cairo(
@@ -312,10 +346,13 @@ class _ViolationsScreenState extends State<ViolationsScreen> {
               ],
             ),
           ),
+
+          // ── جسم البطاقة ────────────────────────────
           Padding(
             padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
             child: Column(
               children: [
+                // نوع المخالفة
                 _buildDetailRow(
                   Icons.description_outlined,
                   l.violationType,
@@ -325,24 +362,30 @@ class _ViolationsScreenState extends State<ViolationsScreen> {
                   color: _isDark ? Colors.white38 : Colors.black12,
                   height: 12,
                 ),
+
+                // التاريخ
+                _buildDetailRow(Icons.calendar_today, l.date, violation.date),
+                Divider(
+                  color: _isDark ? Colors.white38 : Colors.black12,
+                  height: 12,
+                ),
+
+                // ← ملاحظة الإدارة (السبب التفصيلي)
+                if (violation.notes != null && violation.notes!.isNotEmpty) ...[
+                  _buildDetailRow(Icons.notes, l.notes, violation.notes!),
+                  Divider(
+                    color: _isDark ? Colors.white38 : Colors.black12,
+                    height: 12,
+                  ),
+                ],
+
+                // المبلغ
                 _buildDetailRow(
                   Icons.attach_money,
                   l.amount,
                   '${violation.amount.toStringAsFixed(2)} ₪',
                   valueColor: Colors.redAccent,
                 ),
-                Divider(
-                  color: _isDark ? Colors.white38 : Colors.black12,
-                  height: 12,
-                ),
-                _buildDetailRow(Icons.calendar_today, l.date, violation.date),
-                if (violation.notes != null) ...[
-                  Divider(
-                    color: _isDark ? Colors.white38 : Colors.black12,
-                    height: 12,
-                  ),
-                  _buildDetailRow(Icons.notes, l.notes, violation.notes!),
-                ],
               ],
             ),
           ),
@@ -359,16 +402,20 @@ class _ViolationsScreenState extends State<ViolationsScreen> {
   }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // ← القيمة
-        Text(
-          value,
-          style: GoogleFonts.cairo(
-            color:
-                valueColor ??
-                (_isDark ? AppColors.textPrimary : Colors.black87),
-            fontSize: AppDimensions.fontSmall(context),
-            fontWeight: FontWeight.w600,
+        Flexible(
+          child: Text(
+            value,
+            textAlign: l.isArabic ? TextAlign.left : TextAlign.right,
+            style: GoogleFonts.cairo(
+              color:
+                  valueColor ??
+                  (_isDark ? AppColors.textPrimary : Colors.black87),
+              fontSize: AppDimensions.fontSmall(context),
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
         // ← الـ Label

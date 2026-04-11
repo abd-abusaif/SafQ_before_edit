@@ -32,12 +32,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   DriverInfoEntity? _driverInfo;
   LineInfoEntity? _lineInfo;
+  OwnerInfoEntity? _ownerInfo;
   VehicleInfoEntity? _vehicleInfo;
   bool _isLoading = true;
   String _currentPassword = '';
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
-  AppLocalizations get l => AppLocalizations.of(context); // ← الترجمة
+  AppLocalizations get l => AppLocalizations.of(context);
 
   @override
   void initState() {
@@ -49,18 +50,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isLoading = true);
     try {
       final session = await SessionManager.getSession();
-      if (session != null) {
-        _currentPassword = session['currentPassword'] ?? '';
-      }
+      if (session != null) _currentPassword = session['currentPassword'] ?? '';
+
       final results = await Future.wait([
         _repo.getDriverInfo(widget.idNumber),
         _repo.getLineInfo(widget.idNumber),
+        _repo.getOwnerInfo(widget.idNumber),
         _repo.getVehicleInfo(widget.idNumber),
       ]);
+
       setState(() {
         _driverInfo = results[0] as DriverInfoEntity;
         _lineInfo = results[1] as LineInfoEntity;
-        _vehicleInfo = results[2] as VehicleInfoEntity;
+        _ownerInfo = results[2] as OwnerInfoEntity;
+        _vehicleInfo = results[3] as VehicleInfoEntity;
       });
     } finally {
       setState(() => _isLoading = false);
@@ -119,137 +122,205 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildAvatarSection(),
                     SizedBox(height: AppDimensions.spacingLarge(context)),
 
-                    // ← 1. معلومات السائق
-                    _buildSectionCard(
-                      title: l.driverInfo,
-                      icon: Icons.person_outline,
-                      color: AppColors.primary,
-                      items: [
-                        _InfoItem(
-                          icon: Icons.person,
-                          label: l.fullName,
-                          value: _driverInfo!.fullName,
-                        ),
-                        _InfoItem(
-                          icon: Icons.badge_outlined,
-                          label: l.idNumberLabel,
-                          value: _driverInfo!.idNumber,
-                        ),
-                        _InfoItem(
-                          icon: Icons.phone_outlined,
-                          label: l.phone1,
-                          value: _driverInfo!.phone1,
-                        ),
-                        if (_driverInfo!.phone2 != null)
+                    // 1. المعلومات الشخصية
+                    if (_driverInfo != null)
+                      _buildSectionCard(
+                        title: l.driverInfo,
+                        icon: Icons.person_outline,
+                        color: AppColors.primary,
+                        items: [
+                          _InfoItem(
+                            icon: Icons.person,
+                            label: l.fullName,
+                            value: _driverInfo!.fullName,
+                          ),
+                          _InfoItem(
+                            icon: Icons.badge_outlined,
+                            label: l.idNumberLabel,
+                            value: _driverInfo!.idNumber,
+                          ),
                           _InfoItem(
                             icon: Icons.phone_outlined,
-                            label: l.phone2,
-                            value: _driverInfo!.phone2!,
+                            label: l.phone1,
+                            value: _driverInfo!.phone1,
                           ),
-                        _InfoItem(
-                          icon: Icons.credit_card,
-                          label: l.licenseNumber,
-                          value: _driverInfo!.licenseNumber,
-                        ),
-                        _InfoItem(
-                          icon: Icons.star_outline,
-                          label: l.licenseGrade,
-                          value: _driverInfo!.licenseGrade,
-                        ),
-                        _InfoItem(
-                          icon: Icons.calendar_today,
-                          label: l.licenseExpiry,
-                          value: _driverInfo!.licenseExpiry,
-                          isDate: true,
-                        ),
-                        _InfoItem(
-                          icon: Icons.medical_services_outlined,
-                          label: l.medicalExpiry,
-                          value: _driverInfo!.medicalExpiry,
-                          isDate: true,
-                        ),
-                      ],
-                    ),
+                          // ← هاتف 2: إخفاء الحقل إذا لم تأتِ بيانات من الـ API
+                          if (_driverInfo!.phone2 != null &&
+                              _driverInfo!.phone2!.isNotEmpty)
+                            _InfoItem(
+                              icon: Icons.phone_outlined,
+                              label: l.phone2,
+                              value: _driverInfo!.phone2!,
+                            ),
+                          _InfoItem(
+                            icon: Icons.credit_card,
+                            label: l.licenseNumber,
+                            value: _driverInfo!.licenseNumber,
+                          ),
+                          _InfoItem(
+                            icon: Icons.star_outline,
+                            label: l.licenseGrade,
+                            value: _driverInfo!.licenseGrade,
+                          ),
+                          _InfoItem(
+                            icon: Icons.calendar_today,
+                            label: l.licenseExpiry,
+                            value: _driverInfo!.licenseExpiry,
+                            isDate: true,
+                          ),
+                          _InfoItem(
+                            icon: Icons.medical_services_outlined,
+                            label: l.medicalExpiry,
+                            value: _driverInfo!.medicalExpiry,
+                            isDate: true,
+                          ),
+                        ],
+                      ),
+
                     SizedBox(height: AppDimensions.spacingMedium(context)),
 
-                    // ← 2. معلومات الخط
-                    _buildSectionCard(
-                      title: l.lineInfo,
-                      icon: Icons.route_outlined,
-                      color: const Color(0xFF81C784),
-                      items: [
-                        _InfoItem(
-                          icon: Icons.tag,
-                          label: l.lineNumber,
-                          value:
-                              '${l.translate('line_label')} ${_lineInfo!.lineNumber} : ${_lineInfo!.lineName}',
-                        ),
-                        _InfoItem(
-                          icon: Icons.attach_money,
-                          label: l.passengerFare,
-                          value: _lineInfo!.passengerFare,
-                        ),
-                      ],
-                    ),
+                    // 2. بيانات الخط
+                    if (_lineInfo != null)
+                      _buildSectionCard(
+                        title: l.lineInfo,
+                        icon: Icons.route_outlined,
+                        color: const Color(0xFF81C784),
+                        items: [
+                          _InfoItem(
+                            icon: Icons.tag,
+                            label: l.lineNumber,
+                            value: _lineInfo!.lineNumber,
+                          ),
+                          _InfoItem(
+                            icon: Icons.swap_horiz,
+                            label: l.lineFromTo,
+                            value:
+                                '${_lineInfo!.lineFrom} ← ${_lineInfo!.lineTo}',
+                          ),
+                          _InfoItem(
+                            icon: Icons.map_outlined,
+                            label: l.lineRoute,
+                            value: _lineInfo!.route,
+                          ),
+                          _InfoItem(
+                            icon: Icons.attach_money,
+                            label: l.passengerFare,
+                            value: _lineInfo!.passengerFare,
+                          ),
+                        ],
+                      ),
+
                     SizedBox(height: AppDimensions.spacingMedium(context)),
 
-                    // ← 3. معلومات المركبة
-                    _buildSectionCard(
-                      title: l.vehicleInfo,
-                      icon: Icons.directions_car_outlined,
-                      color: const Color(0xFF4FC3F7),
-                      items: [
-                        _InfoItem(
-                          icon: Icons.confirmation_number_outlined,
-                          label: l.vehicleNumber,
-                          value: _vehicleInfo!.vehicleNumber,
-                        ),
-                        _InfoItem(
-                          icon: Icons.qr_code,
-                          label: l.vehicleCode,
-                          value: _vehicleInfo!.vehicleCode,
-                        ),
-                        _InfoItem(
-                          icon: Icons.directions_bus_outlined,
-                          label: l.model,
-                          value: _vehicleInfo!.model,
-                        ),
-                        _InfoItem(
-                          icon: Icons.drive_eta_outlined,
-                          label: l.driverType,
-                          value: _vehicleInfo!.driverType,
-                        ),
-                        _InfoItem(
-                          icon: Icons.event_seat_outlined,
-                          label: l.seats,
-                          value: _vehicleInfo!.seats,
-                        ),
-                        _InfoItem(
-                          icon: Icons.calendar_today,
-                          label: l.operationExpiry,
-                          value: _vehicleInfo!.operationExpiry,
-                          isDate: true,
-                        ),
-                        _InfoItem(
-                          icon: Icons.calendar_today,
-                          label: l.vehicleLicExpiry,
-                          value: _vehicleInfo!.vehicleLicExpiry,
-                          isDate: true,
-                        ),
-                        _InfoItem(
-                          icon: Icons.security_outlined,
-                          label: l.insuranceExpiry,
-                          value: _vehicleInfo!.insuranceExpiry,
-                          isDate: true,
-                        ),
-                        if (_vehicleInfo!.chassisNumber != null)
+                    // 3. بيانات المالك
+                    if (_ownerInfo != null)
+                      _buildSectionCard(
+                        title: l.ownerInfo,
+                        icon: Icons.business_outlined,
+                        color: const Color(0xFFFFB74D),
+                        items: [
+                          _InfoItem(
+                            icon: Icons.person,
+                            label: l.ownerName,
+                            value: _ownerInfo!.ownerName,
+                          ),
+                          _InfoItem(
+                            icon: Icons.badge_outlined,
+                            label: l.ownerId,
+                            value: _ownerInfo!.ownerId,
+                          ),
+                          _InfoItem(
+                            icon: Icons.phone_outlined,
+                            label: l.ownerPhone,
+                            value: _ownerInfo!.ownerPhone,
+                          ),
+                        ],
+                      ),
+
+                    SizedBox(height: AppDimensions.spacingMedium(context)),
+
+                    // 4. بيانات المركبة
+                    if (_vehicleInfo != null)
+                      _buildSectionCard(
+                        title: l.vehicleInfo,
+                        icon: Icons.directions_bus_outlined,
+                        color: const Color(0xFF4FC3F7),
+                        items: [
+                          _InfoItem(
+                            icon: Icons.confirmation_number_outlined,
+                            label: l.vehicleNumber,
+                            value: _vehicleInfo!.vehicleNumber,
+                          ),
+                          _InfoItem(
+                            icon: Icons.qr_code,
+                            label: l.vehicleCode,
+                            value: _vehicleInfo!.vehicleCode,
+                          ),
+                          // ← الشاصي مرتين (تأكيد التكرار)
                           _InfoItem(
                             icon: Icons.numbers_outlined,
                             label: l.chassisNumber,
-                            value: _vehicleInfo!.chassisNumber!,
+                            value: _vehicleInfo!.chassisNumber,
                           ),
-                      ],
-                    ),
+                          _InfoItem(
+                            icon: Icons.numbers_outlined,
+                            label: l.chassisConfirm,
+                            value: _vehicleInfo!.chassisNumber,
+                          ),
+                          _InfoItem(
+                            icon: Icons.factory_outlined,
+                            label: l.company,
+                            value: _vehicleInfo!.company,
+                          ),
+                          _InfoItem(
+                            icon: Icons.directions_car,
+                            label: l.model,
+                            value: _vehicleInfo!.model,
+                          ),
+                          _InfoItem(
+                            icon: Icons.calendar_today,
+                            label: l.productionYear,
+                            value: _vehicleInfo!.productionYear,
+                          ),
+                          _InfoItem(
+                            icon: Icons.event_seat_outlined,
+                            label: l.seats,
+                            value: _vehicleInfo!.seats,
+                          ),
+                          _InfoItem(
+                            icon: Icons.calendar_today,
+                            label: l.operationExpiry,
+                            value: _vehicleInfo!.operationExpiry,
+                            isDate: true,
+                          ),
+                          _InfoItem(
+                            icon: Icons.calendar_today,
+                            label: l.vehicleLicExpiry,
+                            value: _vehicleInfo!.vehicleLicExpiry,
+                            isDate: true,
+                          ),
+                          _InfoItem(
+                            icon: Icons.security_outlined,
+                            label: l.insuranceExpiry,
+                            value: _vehicleInfo!.insuranceExpiry,
+                            isDate: true,
+                          ),
+                          // ← حالة السماح بالتحميل
+                          _InfoItem(
+                            icon: _vehicleInfo!.loadingAllowed
+                                ? Icons.check_circle_outline
+                                : Icons.block,
+                            label: l.loadingAllowed,
+                            value: _vehicleInfo!.loadingAllowed
+                                ? l.loadingYes
+                                : l.loadingNo,
+                            customColor: _vehicleInfo!.loadingAllowed
+                                ? Colors.green
+                                : Colors.redAccent,
+                          ),
+                        ],
+                      ),
+
                     SizedBox(height: AppDimensions.spacingLarge(context)),
                   ],
                 ),
@@ -261,7 +332,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildAvatarSection() {
     final isDark = SafQApp.of(context)?.isDark ?? true;
     final avatarSize = AppDimensions.avatarLarge(context);
-
     return Column(
       children: [
         Container(
@@ -312,13 +382,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         SizedBox(height: AppDimensions.spacingMedium(context)),
-
-        // ← زر تعديل كلمة المرور
         _buildActionButton(
           icon: Icons.lock_reset,
           label: l.editPassword,
           onTap: () async {
-            final newPassword = await Navigator.push<String>(
+            final newPass = await Navigator.push<String>(
               context,
               MaterialPageRoute(
                 builder: (_) => ChangePasswordScreen(
@@ -327,25 +395,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             );
-            if (newPassword != null && mounted) {
-              setState(() => _currentPassword = newPassword);
+            if (newPass != null && mounted) {
+              setState(() => _currentPassword = newPass);
             }
           },
         ),
         SizedBox(height: AppDimensions.spacingSmall(context)),
-
-        // ← زر Dark/Light mode
         _buildActionButton(
           icon: isDark ? Icons.light_mode : Icons.dark_mode,
           label: isDark ? l.switchLight : l.switchDark,
           onTap: () => SafQApp.of(context)?.toggleTheme(),
         ),
         SizedBox(height: AppDimensions.spacingSmall(context)),
-
-        // ← زر تغيير اللغة ✅
         _buildActionButton(
           icon: Icons.language,
-          label: l.switchLanguage, // ← "English" أو "عربي"
+          label: l.switchLanguage,
           onTap: () {
             final newLang = l.isArabic ? 'en' : 'ar';
             SafQApp.of(context)?.changeLanguage(newLang);
@@ -355,7 +419,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ← Widget موحد للأزرار
   Widget _buildActionButton({
     required IconData icon,
     required String label,
@@ -479,7 +542,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildInfoRow(_InfoItem item, Color color) {
+  Widget _buildInfoRow(_InfoItem item, Color sectionColor) {
     bool isExpired = false;
     bool isNearExpiry = false;
 
@@ -488,46 +551,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final date = DateTime.parse(item.value);
         final diff = date.difference(DateTime.now()).inDays;
         isExpired = diff < 0;
-        isNearExpiry = diff >= 0 && diff <= 30;
+        isNearExpiry = diff >= 0 && diff <= 15;
       } catch (_) {}
     }
 
-    final valueColor = isExpired
-        ? Colors.redAccent
-        : isNearExpiry
-        ? Colors.orange
-        : _isDark
-        ? AppColors.textPrimary
-        : Colors.black87;
+    final valueColor =
+        item.customColor ??
+        (isExpired
+            ? Colors.redAccent
+            : isNearExpiry
+            ? Colors.orange
+            : _isDark
+            ? AppColors.textPrimary
+            : Colors.black87);
 
-    // ← اتجاه الصف حسب اللغة
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // ← القيمة (يسار في العربي، يمين في الإنجليزي)
+        // القيمة
         if (!l.isArabic)
-          Row(
-            children: [
-              if (isExpired || isNearExpiry) ...[
-                Icon(
-                  Icons.warning_amber_rounded,
-                  color: isExpired ? Colors.redAccent : Colors.orange,
-                  size: AppDimensions.iconSmall(context),
-                ),
-                SizedBox(width: AppDimensions.spacingXSmall(context)),
-              ],
-              Text(
-                item.value,
-                style: GoogleFonts.cairo(
-                  color: valueColor,
-                  fontSize: AppDimensions.fontMedium(context),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
+          _valueWidget(item.value, valueColor, isExpired, isNearExpiry),
 
-        // ← الـ label والأيقونة
+        // Label + أيقونة
         Row(
           children: [
             if (l.isArabic) ...[
@@ -541,13 +586,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               SizedBox(width: AppDimensions.spacingSmall(context)),
               Icon(
                 item.icon,
-                color: color.withOpacity(0.7),
+                color: sectionColor.withOpacity(0.7),
                 size: AppDimensions.iconSmall(context),
               ),
             ] else ...[
               Icon(
                 item.icon,
-                color: color.withOpacity(0.7),
+                color: sectionColor.withOpacity(0.7),
                 size: AppDimensions.iconSmall(context),
               ),
               SizedBox(width: AppDimensions.spacingSmall(context)),
@@ -562,28 +607,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
 
-        // ← القيمة في العربي (يسار)
+        // القيمة (عربي)
         if (l.isArabic)
-          Row(
-            children: [
-              if (isExpired || isNearExpiry) ...[
-                Icon(
-                  Icons.warning_amber_rounded,
-                  color: isExpired ? Colors.redAccent : Colors.orange,
-                  size: AppDimensions.iconSmall(context),
-                ),
-                SizedBox(width: AppDimensions.spacingXSmall(context)),
-              ],
-              Text(
-                item.value,
-                style: GoogleFonts.cairo(
-                  color: valueColor,
-                  fontSize: AppDimensions.fontMedium(context),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+          _valueWidget(item.value, valueColor, isExpired, isNearExpiry),
+      ],
+    );
+  }
+
+  Widget _valueWidget(
+    String value,
+    Color color,
+    bool isExpired,
+    bool isNearExpiry,
+  ) {
+    return Row(
+      children: [
+        if ((isExpired || isNearExpiry)) ...[
+          Icon(
+            Icons.warning_amber_rounded,
+            color: isExpired ? Colors.redAccent : Colors.orange,
+            size: AppDimensions.iconSmall(context),
           ),
+          SizedBox(width: AppDimensions.spacingXSmall(context)),
+        ],
+        Text(
+          value,
+          style: GoogleFonts.cairo(
+            color: color,
+            fontSize: AppDimensions.fontMedium(context),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ],
     );
   }
@@ -594,11 +648,13 @@ class _InfoItem {
   final String label;
   final String value;
   final bool isDate;
+  final Color? customColor;
 
   const _InfoItem({
     required this.icon,
     required this.label,
     required this.value,
     this.isDate = false,
+    this.customColor,
   });
 }

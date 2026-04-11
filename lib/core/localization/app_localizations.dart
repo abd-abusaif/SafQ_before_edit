@@ -4,10 +4,8 @@ import 'translations/en.dart';
 
 class AppLocalizations {
   final Locale locale;
-
   AppLocalizations(this.locale);
 
-  // ← الطريقة السهلة للوصول من أي شاشة
   static AppLocalizations of(BuildContext context) {
     return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
   }
@@ -15,7 +13,6 @@ class AppLocalizations {
   static const LocalizationsDelegate<AppLocalizations> delegate =
       _AppLocalizationsDelegate();
 
-  // ← اختيار اللغة المناسبة
   Map<String, String> get _translations {
     switch (locale.languageCode) {
       case 'ar':
@@ -27,18 +24,9 @@ class AppLocalizations {
     }
   }
 
-  // ← الدالة الرئيسية للترجمة
-  String translate(String key) {
-    return _translations[key] ?? key;
-  }
-
-  // ← اختصار مريح
+  String translate(String key) => _translations[key] ?? key;
   String call(String key) => translate(key);
-
-  // ← هل اللغة عربية؟
   bool get isArabic => locale.languageCode == 'ar';
-
-  // ── Getters لكل النصوص ──────────────────────────
 
   // Auth
   String get appName => translate('app_name');
@@ -58,7 +46,7 @@ class AppLocalizations {
   String get cancel => translate('cancel');
   String get ok => translate('ok');
 
-  // User Roles
+  // Roles
   String get driver => translate('driver');
   String get supervisor => translate('supervisor');
   String get security => translate('security');
@@ -93,6 +81,36 @@ class AppLocalizations {
   String get rejectedQueue => translate('rejected_queue');
   String get rejectedMsg => translate('rejected_msg');
   String get violationBlockWarn => translate('violation_block_warn');
+
+  // Loading Validity
+  String get loadingValidity => translate('loading_validity');
+  String get loadingValidityExpired => translate('loading_validity_expired');
+  String get dayLabel => translate('day');
+  String get hourLabel => translate('hour');
+  String get minuteLabel => translate('minute');
+  String get expiredLabel => translate('expired');
+
+  // License Warning
+  String get operatingLicense => translate('operating_license');
+  String get vehicleLicWarn => translate('vehicle_license_warn');
+  String get driverLicWarn => translate('driver_license_warn');
+  String get licenseExpiredWarn => translate('license_expired_warn');
+  String get registerBlocked => translate('register_blocked');
+
+  // Movement Permit
+  String get movementPermit => translate('movement_permit');
+  String get availableSlots => translate('available_slots');
+  String get generatePermit => translate('generate_permit');
+  String get permitVehicle => translate('permit_vehicle');
+  String get permitExitTime => translate('permit_exit_time');
+  String get permitExitGate => translate('permit_exit_gate');
+  String get permitLicenseNum => translate('permit_license_num');
+  String get permitDestination => translate('permit_destination');
+  String get close => translate('close');
+
+  // Entered Vehicles
+  String get enteredVehicles => translate('entered_vehicles');
+  String get entryTime => translate('entry_time');
 
   // Home — Supervisor
   String get manageQueue => translate('manage_queue');
@@ -132,16 +150,24 @@ class AppLocalizations {
   String get licenseExpiry => translate('license_expiry');
   String get medicalExpiry => translate('medical_expiry');
   String get lineNumber => translate('line_number');
+  String get lineFromTo => translate('line_from_to');
+  String get lineRoute => translate('line_route');
   String get passengerFare => translate('passenger_fare');
   String get vehicleNumber => translate('vehicle_number');
   String get vehicleCode => translate('vehicle_code');
+  String get company => translate('company');
   String get model => translate('model');
+  String get productionYear => translate('production_year');
   String get driverType => translate('driver_type');
   String get seats => translate('seats');
   String get operationExpiry => translate('operation_expiry');
   String get vehicleLicExpiry => translate('vehicle_lic_expiry');
   String get insuranceExpiry => translate('insurance_expiry');
   String get chassisNumber => translate('chassis_number');
+  String get chassisConfirm => translate('chassis_confirm');
+  String get loadingAllowed => translate('loading_allowed');
+  String get loadingYes => translate('loading_yes');
+  String get loadingNo => translate('loading_no');
   String get ownerName => translate('owner_name');
   String get ownerId => translate('owner_id');
   String get ownerPhone => translate('owner_phone');
@@ -180,6 +206,7 @@ class AppLocalizations {
   String get other => translate('other');
   String get permissionReason => translate('permission_reason');
   String get reasonHint => translate('reason_hint');
+  String get reasonRequired => translate('reason_required');
   String get requestDate => translate('request_date');
   String get duration => translate('duration');
   String get sendRequest => translate('send_request');
@@ -200,6 +227,7 @@ class AppLocalizations {
   String get noViolations => translate('no_violations');
   String get cleanRecord => translate('clean_record');
   String get totalViolations => translate('total_violations');
+  String get totalCount => translate('total_count');
   String get blockEntryWarn => translate('block_entry_warn');
   String get withBlock => translate('with_block');
   String get withoutBlock => translate('without_block');
@@ -219,7 +247,6 @@ class AppLocalizations {
   String get loading => translate('loading');
 }
 
-// ── Delegate ─────────────────────────────────────────
 class _AppLocalizationsDelegate
     extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();

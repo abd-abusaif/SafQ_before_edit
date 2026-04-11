@@ -6,8 +6,9 @@ class QueueEntryEntity {
   final String lineFrom; // من
   final String lineTo; // إلى
   final String entryTime; // وقت الدخول
-  final String? exitTime; // وقت الخروج (ممكن يكون فارغ)
+  final String? exitTime; // وقت الخروج
   final int registrationNumber; // رقم تسجيل الدور
+  final DateTime? loadingValidityDate; // تاريخ التحميل المسموح
 
   const QueueEntryEntity({
     required this.queuePosition,
@@ -17,5 +18,6 @@ class QueueEntryEntity {
     required this.entryTime,
     this.exitTime,
     required this.registrationNumber,
+    this.loadingValidityDate,
   });
 }
