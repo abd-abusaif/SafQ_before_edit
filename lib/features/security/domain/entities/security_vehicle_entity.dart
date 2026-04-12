@@ -1,3 +1,5 @@
+// features/security/domain/entities/security_vehicle_entity.dart
+
 class SecurityVehicleEntity {
   final String id;
   final String driverName;
@@ -9,6 +11,7 @@ class SecurityVehicleEntity {
   final bool isApproved;
   final String? rejectionReason;
   final DateTime entryDateTime;
+  final bool isHandled; // false=أحمر (يحتاج تدخل) | true=أخضر (تم التعامل)
 
   const SecurityVehicleEntity({
     required this.id,
@@ -21,7 +24,24 @@ class SecurityVehicleEntity {
     required this.isApproved,
     this.rejectionReason,
     required this.entryDateTime,
+    this.isHandled = false,
   });
+
+  SecurityVehicleEntity copyWith({bool? isHandled}) {
+    return SecurityVehicleEntity(
+      id: id,
+      driverName: driverName,
+      vehiclePlate: vehiclePlate,
+      lineFrom: lineFrom,
+      lineTo: lineTo,
+      entryTime: entryTime,
+      queuePosition: queuePosition,
+      isApproved: isApproved,
+      rejectionReason: rejectionReason,
+      entryDateTime: entryDateTime,
+      isHandled: isHandled ?? this.isHandled,
+    );
+  }
 
   factory SecurityVehicleEntity.fromJson(Map<String, dynamic> json) {
     return SecurityVehicleEntity(
@@ -34,7 +54,9 @@ class SecurityVehicleEntity {
       queuePosition: json['queue_position'] ?? 0,
       isApproved: json['is_approved'] ?? false,
       rejectionReason: json['rejection_reason'],
-      entryDateTime: DateTime.parse(json['entry_date_time']),
+      entryDateTime:
+          DateTime.tryParse(json['entry_date_time'] ?? '') ?? DateTime.now(),
+      isHandled: json['is_handled'] ?? false,
     );
   }
 }

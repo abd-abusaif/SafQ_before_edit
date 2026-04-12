@@ -1,3 +1,5 @@
+// features/security/presentation/widgets/security_vehicle_item_widget.dart
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -6,13 +8,8 @@ import '../../domain/entities/security_vehicle_entity.dart';
 
 class SecurityVehicleItemWidget extends StatelessWidget {
   final SecurityVehicleEntity vehicle;
-  final VoidCallback? onHandled;
 
-  const SecurityVehicleItemWidget({
-    super.key,
-    required this.vehicle,
-    this.onHandled,
-  });
+  const SecurityVehicleItemWidget({super.key, required this.vehicle});
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +29,7 @@ class SecurityVehicleItemWidget extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // ← Header
+          // رأس البطاقة
           Container(
             width: double.infinity,
             padding: EdgeInsets.symmetric(
@@ -78,128 +75,56 @@ class SecurityVehicleItemWidget extends StatelessWidget {
               ],
             ),
           ),
-
-          // ← التفاصيل
+          // التفاصيل
           Padding(
             padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
-            child: Column(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Text(
-                          '#${vehicle.queuePosition}',
-                          style: GoogleFonts.cairo(
-                            color: AppColors.primary,
-                            fontSize: AppDimensions.fontSmall(context),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(width: AppDimensions.spacingSmall(context)),
-                        Text(
-                          vehicle.entryTime,
-                          style: GoogleFonts.cairo(
-                            color: isDark
-                                ? AppColors.textSecondary
-                                : Colors.black54,
-                            fontSize: AppDimensions.fontXSmall(context),
-                          ),
-                        ),
-                      ],
+                    Text(
+                      '#${vehicle.queuePosition}',
+                      style: GoogleFonts.cairo(
+                        color: AppColors.primary,
+                        fontSize: AppDimensions.fontSmall(context),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          vehicle.vehiclePlate,
-                          style: GoogleFonts.cairo(
-                            color: isDark
-                                ? AppColors.textPrimary
-                                : Colors.black87,
-                            fontSize: AppDimensions.fontSmall(context),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          '${vehicle.lineFrom} - ${vehicle.lineTo}',
-                          style: GoogleFonts.cairo(
-                            color: isDark
-                                ? AppColors.textSecondary
-                                : Colors.black54,
-                            fontSize: AppDimensions.fontXSmall(context),
-                          ),
-                        ),
-                      ],
+                    SizedBox(width: AppDimensions.spacingSmall(context)),
+                    Text(
+                      vehicle.entryTime,
+                      style: GoogleFonts.cairo(
+                        color: isDark
+                            ? AppColors.textSecondary
+                            : Colors.black54,
+                        fontSize: AppDimensions.fontXSmall(context),
+                      ),
                     ),
                   ],
                 ),
-
-                // ← سبب الرفض + زر اكتمل
-                if (!vehicle.isApproved && vehicle.rejectionReason != null) ...[
-                  SizedBox(height: AppDimensions.spacingSmall(context)),
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppDimensions.spacingSmall(context),
-                      vertical: AppDimensions.spacingXSmall(context),
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(
-                        AppDimensions.cardRadius(context) * 0.6,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      vehicle.vehiclePlate,
+                      style: GoogleFonts.cairo(
+                        color: isDark ? AppColors.textPrimary : Colors.black87,
+                        fontSize: AppDimensions.fontSmall(context),
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          vehicle.rejectionReason!,
-                          style: GoogleFonts.cairo(
-                            color: Colors.redAccent,
-                            fontSize: AppDimensions.fontXSmall(context),
-                          ),
-                        ),
-                        SizedBox(width: AppDimensions.spacingXSmall(context)),
-                        Icon(
-                          Icons.info_outline,
-                          color: Colors.redAccent,
-                          size: AppDimensions.iconSmall(context),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: AppDimensions.spacingSmall(context)),
-                  SizedBox(
-                    width: double.infinity,
-                    height: AppDimensions.buttonHeight(context) * 0.8,
-                    child: ElevatedButton.icon(
-                      onPressed: onHandled,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppDimensions.cardRadius(context),
-                          ),
-                        ),
-                      ),
-                      icon: Icon(
-                        Icons.check_circle_outline,
-                        color: Colors.white,
-                        size: AppDimensions.iconSmall(context),
-                      ),
-                      label: Text(
-                        'تم التعامل مع الحالة',
-                        style: GoogleFonts.cairo(
-                          color: Colors.white,
-                          fontSize: AppDimensions.fontSmall(context),
-                          fontWeight: FontWeight.bold,
-                        ),
+                    Text(
+                      '${vehicle.lineFrom} - ${vehicle.lineTo}',
+                      style: GoogleFonts.cairo(
+                        color: isDark
+                            ? AppColors.textSecondary
+                            : Colors.black54,
+                        fontSize: AppDimensions.fontXSmall(context),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ],
             ),
           ),

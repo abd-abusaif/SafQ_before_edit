@@ -1,3 +1,5 @@
+// features/security/presentation/screens/security_profile_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -23,6 +25,7 @@ class SecurityProfileScreen extends StatefulWidget {
 class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
   bool _isLoading = true;
   String _currentPassword = '';
+  String _phone = '';
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
 
@@ -38,6 +41,8 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
       final session = await SessionManager.getSession();
       if (session != null) {
         _currentPassword = session['currentPassword'] ?? '';
+        // API: GET /api/security/profile/$idNumber → phone
+        _phone = session['phone'] ?? '0599000000';
       }
     } finally {
       setState(() => _isLoading = false);
@@ -56,6 +61,8 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
+        automaticallyImplyLeading: false,
+        centerTitle: true,
         title: Text(
           'الصفحة الشخصية',
           style: GoogleFonts.cairo(
@@ -64,8 +71,6 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
             fontSize: AppDimensions.fontLarge(context),
           ),
         ),
-        centerTitle: true,
-        automaticallyImplyLeading: false,
       ),
       body: _isLoading
           ? const Center(
@@ -93,13 +98,13 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
 
   Widget _buildAvatarSection() {
     final isDark = SafQApp.of(context)?.isDark ?? true;
-    final avatarSize = AppDimensions.avatarLarge(context);
+    final size = AppDimensions.avatarLarge(context);
 
     return Column(
       children: [
         Container(
-          width: avatarSize,
-          height: avatarSize,
+          width: size,
+          height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: AppColors.primary.withOpacity(0.2),
@@ -145,11 +150,10 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
           ),
         ),
         SizedBox(height: AppDimensions.spacingMedium(context)),
-
-        // ← زر تعديل كلمة المرور
+        // تعديل كلمة المرور
         TextButton.icon(
           onPressed: () async {
-            final newPassword = await Navigator.push<String>(
+            final np = await Navigator.push<String>(
               context,
               MaterialPageRoute(
                 builder: (_) => ChangePasswordScreen(
@@ -158,9 +162,7 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
                 ),
               ),
             );
-            if (newPassword != null && mounted) {
-              setState(() => _currentPassword = newPassword);
-            }
+            if (np != null && mounted) setState(() => _currentPassword = np);
           },
           icon: Icon(
             Icons.lock_reset,
@@ -187,8 +189,7 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
           ),
         ),
         SizedBox(height: AppDimensions.spacingSmall(context)),
-
-        // ← زر Dark/Light mode
+        // تبديل الثيم
         GestureDetector(
           onTap: () => SafQApp.of(context)?.toggleTheme(),
           child: Container(
@@ -236,6 +237,7 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          // رأس البطاقة
           Container(
             width: double.infinity,
             padding: EdgeInsets.symmetric(
@@ -253,7 +255,7 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Text(
-                  'معلومات موظف الأمن',
+                  'المعلومات الشخصية',
                   style: GoogleFonts.cairo(
                     color: AppColors.primary,
                     fontSize: AppDimensions.fontMedium(context),
@@ -273,19 +275,20 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
             padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
             child: Column(
               children: [
-                _buildInfoRow(
-                  Icons.person,
-                  'الاسم الرباعي',
-                  widget.securityName,
-                ),
+                _infoRow(Icons.person, 'الاسم', widget.securityName),
                 Divider(
-                  color: _isDark ? Colors.white38 : Colors.black12,
-                  height: 16,
+                  color: _isDark ? Colors.white12 : Colors.black12,
+                  height: 20,
                 ),
-                _buildInfoRow(
-                  Icons.badge_outlined,
-                  'رقم الهوية',
-                  widget.idNumber,
+                _infoRow(Icons.badge_outlined, 'رقم الهوية', widget.idNumber),
+                Divider(
+                  color: _isDark ? Colors.white12 : Colors.black12,
+                  height: 20,
+                ),
+                _infoRow(
+                  Icons.phone_outlined,
+                  'رقم الهاتف',
+                  _phone.isEmpty ? '---' : _phone,
                 ),
               ],
             ),
@@ -295,7 +298,7 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _infoRow(IconData icon, String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -316,7 +319,7 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
                 fontSize: AppDimensions.fontXSmall(context),
               ),
             ),
-            SizedBox(width: AppDimensions.spacingSmall(context)),
+            SizedBox(width: AppDimensions.spacingXSmall(context)),
             Icon(
               icon,
               color: AppColors.primary.withOpacity(0.7),

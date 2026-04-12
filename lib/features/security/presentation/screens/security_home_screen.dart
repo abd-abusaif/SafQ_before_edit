@@ -1,3 +1,5 @@
+// features/security/presentation/screens/security_home_screen.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -5,7 +7,6 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../data/repositories/security_repository_impl.dart';
 import '../../domain/entities/security_vehicle_entity.dart';
-import '../widgets/security_vehicle_item_widget.dart';
 
 class SecurityHomeScreen extends StatefulWidget {
   final String securityName;
@@ -39,8 +40,8 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
 
   @override
   void dispose() {
-    for (final timer in _approvedTimers.values) {
-      timer.cancel();
+    for (final t in _approvedTimers.values) {
+      t.cancel();
     }
     super.dispose();
   }
@@ -50,8 +51,8 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
     try {
       final vehicles = await _repo.getVehicles(widget.idNumber);
       setState(() => _vehicles = vehicles);
-      for (final vehicle in vehicles) {
-        if (vehicle.isApproved) _startApprovedTimer(vehicle);
+      for (final v in vehicles) {
+        if (v.isApproved) _startApprovedTimer(v);
       }
     } finally {
       setState(() => _isLoading = false);
@@ -77,78 +78,6 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
         _approvedTimers.remove(vehicleId);
       });
     }
-  }
-
-  Future<void> _onHandled(SecurityVehicleEntity vehicle) async {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            AppDimensions.cardRadius(context),
-          ),
-          side: const BorderSide(color: Colors.redAccent, width: 1),
-        ),
-        icon: Icon(
-          Icons.check_circle_outline,
-          color: Colors.green,
-          size: AppDimensions.iconXLarge(context),
-        ),
-        title: Text(
-          'تأكيد الإتمام',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.cairo(
-            color: _isDark ? AppColors.textPrimary : Colors.black87,
-            fontWeight: FontWeight.bold,
-            fontSize: AppDimensions.fontLarge(context),
-          ),
-        ),
-        content: Text(
-          'هل تم التعامل مع حالة ${vehicle.driverName}؟',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.cairo(
-            color: _isDark ? AppColors.textSecondary : Colors.black54,
-            fontSize: AppDimensions.fontMedium(context),
-          ),
-        ),
-        actionsAlignment: MainAxisAlignment.spaceEvenly,
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'إلغاء',
-              style: GoogleFonts.cairo(
-                color: _isDark ? AppColors.textSecondary : Colors.black54,
-                fontSize: AppDimensions.fontMedium(context),
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await _repo.markAsHandled(vehicle.id);
-              _removeVehicle(vehicle.id);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(
-                  AppDimensions.cardRadius(context),
-                ),
-              ),
-            ),
-            child: Text(
-              'تم',
-              style: GoogleFonts.cairo(
-                color: Colors.white,
-                fontSize: AppDimensions.fontMedium(context),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   String _getInitials(String name) {
@@ -189,16 +118,16 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
                                 vertical: AppDimensions.spacingXSmall(context),
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.redAccent.withOpacity(0.1),
+                                color: Colors.green.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: Colors.redAccent.withOpacity(0.3),
+                                  color: Colors.green.withOpacity(0.3),
                                 ),
                               ),
                               child: Text(
-                                'مرفوض: ${_vehicles.where((v) => !v.isApproved).length}',
+                                'مقبول: ${_vehicles.where((v) => v.isApproved).length}',
                                 style: GoogleFonts.cairo(
-                                  color: Colors.redAccent,
+                                  color: Colors.green,
                                   fontSize: AppDimensions.fontXSmall(context),
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -206,7 +135,6 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
                             ),
                             Text(
                               'حالة المركبات',
-                              textAlign: TextAlign.right,
                               style: GoogleFonts.cairo(
                                 color: _isDark
                                     ? AppColors.textPrimary
@@ -226,14 +154,35 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
                                 AppDimensions.spacingXLarge(context),
                               ),
                               child: Center(
-                                child: Text(
-                                  'لا توجد مركبات حالياً',
-                                  style: GoogleFonts.cairo(
-                                    color: _isDark
-                                        ? AppColors.textSecondary
-                                        : Colors.black54,
-                                    fontSize: AppDimensions.fontMedium(context),
-                                  ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.directions_car_outlined,
+                                      color: _isDark
+                                          ? AppColors.textSecondary
+                                          : Colors.black26,
+                                      size:
+                                          AppDimensions.iconXLarge(context) *
+                                          1.5,
+                                    ),
+                                    SizedBox(
+                                      height: AppDimensions.spacingMedium(
+                                        context,
+                                      ),
+                                    ),
+                                    Text(
+                                      'لا توجد مركبات حالياً',
+                                      style: GoogleFonts.cairo(
+                                        color: _isDark
+                                            ? AppColors.textSecondary
+                                            : Colors.black54,
+                                        fontSize: AppDimensions.fontMedium(
+                                          context,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -243,21 +192,14 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
                               horizontal: AppDimensions.spacingMedium(context),
                             ),
                             sliver: SliverList(
-                              delegate: SliverChildBuilderDelegate((
-                                context,
-                                index,
-                              ) {
-                                final vehicle = _vehicles[index];
-                                return SecurityVehicleItemWidget(
-                                  vehicle: vehicle,
-                                  onHandled: vehicle.isApproved
-                                      ? null
-                                      : () => _onHandled(vehicle),
-                                );
-                              }, childCount: _vehicles.length),
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) =>
+                                    _buildVehicleCard(_vehicles[index]),
+                                childCount: _vehicles.length,
+                              ),
                             ),
                           ),
-                    const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   ],
                 ),
               ),
@@ -266,7 +208,7 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
   }
 
   Widget _buildHeader() {
-    final avatarSize = AppDimensions.avatarSmall(context);
+    final size = AppDimensions.avatarSmall(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(
         AppDimensions.spacingMedium(context),
@@ -278,8 +220,8 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Container(
-            width: avatarSize,
-            height: avatarSize,
+            width: size,
+            height: size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.primary.withOpacity(0.2),
@@ -298,11 +240,130 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
           ),
           Text(
             'أهلاً $_firstName',
-            textAlign: TextAlign.right,
             style: GoogleFonts.cairo(
               color: _isDark ? AppColors.textPrimary : Colors.black87,
               fontSize: AppDimensions.fontLarge(context),
               fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVehicleCard(SecurityVehicleEntity v) {
+    final color = v.isApproved ? Colors.green : Colors.redAccent;
+    final statusLabel = v.isApproved ? 'مقبول' : 'مرفوض';
+    final statusIcon = v.isApproved
+        ? Icons.check_circle_outline
+        : Icons.cancel_outlined;
+
+    return Container(
+      margin: EdgeInsets.only(bottom: AppDimensions.spacingSmall(context)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppDimensions.cardRadius(context)),
+        border: Border.all(color: color.withOpacity(0.4), width: 1),
+      ),
+      child: Column(
+        children: [
+          // رأس البطاقة
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(
+              horizontal: AppDimensions.spacingMedium(context),
+              vertical: AppDimensions.spacingSmall(context),
+            ),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.08),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(AppDimensions.cardRadius(context)),
+                topRight: Radius.circular(AppDimensions.cardRadius(context)),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      statusIcon,
+                      color: color,
+                      size: AppDimensions.iconSmall(context),
+                    ),
+                    SizedBox(width: AppDimensions.spacingXSmall(context)),
+                    Text(
+                      statusLabel,
+                      style: GoogleFonts.cairo(
+                        color: color,
+                        fontSize: AppDimensions.fontSmall(context),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  v.driverName,
+                  style: GoogleFonts.cairo(
+                    color: _isDark ? AppColors.textPrimary : Colors.black87,
+                    fontSize: AppDimensions.fontMedium(context),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // التفاصيل
+          Padding(
+            padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      '#${v.queuePosition}',
+                      style: GoogleFonts.cairo(
+                        color: AppColors.primary,
+                        fontSize: AppDimensions.fontSmall(context),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: AppDimensions.spacingSmall(context)),
+                    Text(
+                      v.entryTime,
+                      style: GoogleFonts.cairo(
+                        color: _isDark
+                            ? AppColors.textSecondary
+                            : Colors.black54,
+                        fontSize: AppDimensions.fontXSmall(context),
+                      ),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      v.vehiclePlate,
+                      style: GoogleFonts.cairo(
+                        color: _isDark ? AppColors.textPrimary : Colors.black87,
+                        fontSize: AppDimensions.fontSmall(context),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      '${v.lineFrom} - ${v.lineTo}',
+                      style: GoogleFonts.cairo(
+                        color: _isDark
+                            ? AppColors.textSecondary
+                            : Colors.black54,
+                        fontSize: AppDimensions.fontXSmall(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
