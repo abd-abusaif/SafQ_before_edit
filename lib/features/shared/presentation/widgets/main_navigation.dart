@@ -1,3 +1,10 @@
+// features/shared/presentation/widgets/main_navigation.dart
+//
+// NOTE: This file is used only for the DRIVER role.
+// Supervisor uses SupervisorMainNavigation.
+// Security uses SecurityMainNavigation.
+// Both are defined in their own feature folders.
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../screens/notifications_screen.dart';
@@ -7,10 +14,6 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/session_manager.dart';
-import '../../../supervisor/presentation/screens/supervisor_profile_screen.dart';
-import '../../../supervisor/presentation/screens/supervisor_permissions_screen.dart';
-import '../../../security/presentation/screens/security_profile_screen.dart';
-import '../../../security/presentation/screens/security_permissions_screen.dart';
 import '../../../driver/presentation/screens/violations_screen.dart';
 
 class MainNavigation extends StatefulWidget {
@@ -36,47 +39,43 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
   late final List<Widget> _screens;
+  late final List<_NavItem> _navItems;
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
   bool get _isDriver => widget.role == 'driver';
 
-  // ← الترجمة
   AppLocalizations get l => AppLocalizations.of(context);
 
   @override
   void initState() {
     super.initState();
+
+    // ── Screens ────────────────────────────────────────────────────────────
     _screens = [
-      widget.homeScreen,
-      const NotificationsScreen(),
+      widget.homeScreen, // 0 - Home
+      const NotificationsScreen(), // 1 - Notifications
+      ProfileScreen(
+        // 2 - Profile
+        driverName: widget.driverName,
+        idNumber: widget.idNumber,
+        role: widget.role,
+        currentPassword: widget.currentPassword,
+      ),
+      const PermissionsScreen(), // 3 - Permissions (driver only)
+      if (_isDriver) const ViolationsScreen(), // 4 - Violations (driver only)
+    ];
 
-      // ← صفحة شخصي حسب الـ role
-      widget.role == 'supervisor'
-          ? SupervisorProfileScreen(
-              supervisorName: widget.driverName,
-              idNumber: widget.idNumber,
-            )
-          : widget.role == 'security'
-          ? SecurityProfileScreen(
-              securityName: widget.driverName,
-              idNumber: widget.idNumber,
-            )
-          : ProfileScreen(
-              driverName: widget.driverName,
-              idNumber: widget.idNumber,
-              role: widget.role,
-              currentPassword: widget.currentPassword,
-            ),
-
-      // ← صفحة الأذونات حسب الـ role
-      widget.role == 'supervisor'
-          ? const SupervisorPermissionsScreen()
-          : widget.role == 'security'
-          ? const SecurityPermissionsScreen()
-          : const PermissionsScreen(),
-
-      // ← صفحة المخالفات للسائق فقط
-      if (_isDriver) const ViolationsScreen(),
+    // ── Nav Items ──────────────────────────────────────────────────────────
+    _navItems = [
+      _NavItem(icon: Icons.home_rounded, label: () => l.home),
+      _NavItem(
+        icon: Icons.notifications_outlined,
+        label: () => l.notifications,
+      ),
+      _NavItem(icon: Icons.person_outline, label: () => l.profile),
+      _NavItem(icon: Icons.lock_clock_outlined, label: () => l.permissions),
+      if (_isDriver)
+        _NavItem(icon: Icons.gavel_outlined, label: () => l.violations),
     ];
   }
 
@@ -175,21 +174,13 @@ class _MainNavigationState extends State<MainNavigation> {
               vertical: AppDimensions.spacingSmall(context),
             ),
             child: Directionality(
-              // ← اتجاه شريط التنقل حسب اللغة
               textDirection: l.isArabic ? TextDirection.rtl : TextDirection.ltr,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildNavItem(0, Icons.home_rounded, l.home),
-                  _buildNavItem(
-                    1,
-                    Icons.notifications_outlined,
-                    l.notifications,
+                  ..._navItems.asMap().entries.map(
+                    (e) => _buildNavItem(e.key, e.value.icon, e.value.label()),
                   ),
-                  _buildNavItem(2, Icons.person_outline, l.profile),
-                  _buildNavItem(3, Icons.lock_clock_outlined, l.permissions),
-                  if (_isDriver)
-                    _buildNavItem(4, Icons.gavel_outlined, l.violations),
                   _buildLogoutItem(),
                 ],
               ),
@@ -276,4 +267,10 @@ class _MainNavigationState extends State<MainNavigation> {
       ),
     );
   }
+}
+
+class _NavItem {
+  final IconData icon;
+  final String Function() label;
+  const _NavItem({required this.icon, required this.label});
 }
