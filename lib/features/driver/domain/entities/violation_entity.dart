@@ -1,10 +1,12 @@
+// features/driver/domain/entities/violation_entity.dart
+
 class ViolationEntity {
   final String id;
   final String violationNumber;
   final String type;
   final double amount;
   final String? notes;
-  final bool blockEntry; // ← true = منع الدخول, false = بدون منع
+  final bool blockEntry;
   final String date;
 
   const ViolationEntity({

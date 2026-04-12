@@ -1,4 +1,5 @@
 // features/driver/domain/repositories/driver_repository.dart
+
 import '../entities/queue_entry_entity.dart';
 
 abstract class DriverRepository {

@@ -1,10 +1,12 @@
 // features/driver/data/repositories/driver_repository_impl.dart
+
 import '../../domain/entities/queue_entry_entity.dart';
 import '../../domain/repositories/driver_repository.dart';
 
 class DriverRepositoryImpl implements DriverRepository {
   @override
   Future<List<QueueEntryEntity>> getQueueList() async {
+    // API: GET /api/driver/queue
     await Future.delayed(const Duration(milliseconds: 800));
 
     final now = DateTime.now();
@@ -14,8 +16,8 @@ class DriverRepositoryImpl implements DriverRepository {
         driverName: 'أحمد محمد',
         lineFrom: 'الخليل',
         lineTo: 'دورا',
-        entryTime: '7:15 AM',
-        exitTime: '7:30 AM',
+        entryTime: '7:15 ص',
+        exitTime: '7:30 ص',
         registrationNumber: 1,
         loadingValidityDate: now.add(const Duration(days: 5)),
       ),
@@ -24,8 +26,8 @@ class DriverRepositoryImpl implements DriverRepository {
         driverName: 'محمود علي',
         lineFrom: 'الخليل',
         lineTo: 'دورا',
-        entryTime: '7:20 AM',
-        exitTime: '7:35 AM',
+        entryTime: '7:20 ص',
+        exitTime: '7:35 ص',
         registrationNumber: 2,
         loadingValidityDate: now.add(const Duration(days: 3)),
       ),
@@ -34,8 +36,8 @@ class DriverRepositoryImpl implements DriverRepository {
         driverName: 'خالد إبراهيم',
         lineFrom: 'الخليل',
         lineTo: 'دورا',
-        entryTime: '7:25 AM',
-        exitTime: '7:40 AM',
+        entryTime: '7:25 ص',
+        exitTime: '7:40 ص',
         registrationNumber: 3,
         loadingValidityDate: now.add(const Duration(days: 7)),
       ),
@@ -44,8 +46,8 @@ class DriverRepositoryImpl implements DriverRepository {
         driverName: 'يوسف سالم',
         lineFrom: 'الخليل',
         lineTo: 'دورا',
-        entryTime: '7:30 AM',
-        exitTime: '7:45 AM',
+        entryTime: '7:30 ص',
+        exitTime: '7:45 ص',
         registrationNumber: 4,
         loadingValidityDate: now.add(const Duration(days: 2)),
       ),
@@ -54,10 +56,9 @@ class DriverRepositoryImpl implements DriverRepository {
         driverName: 'عبدالرحمن أبو سيف',
         lineFrom: 'الخليل',
         lineTo: 'دورا',
-        entryTime: '7:35 AM',
-        exitTime: '7:50 AM',
+        entryTime: '7:35 ص',
+        exitTime: '7:50 ص',
         registrationNumber: 5,
-        // ← اقتراب من الانتهاء لإظهار التنبيه الأحمر
         loadingValidityDate: now.add(const Duration(hours: 18)),
       ),
       QueueEntryEntity(
@@ -65,8 +66,8 @@ class DriverRepositoryImpl implements DriverRepository {
         driverName: 'سامي ناصر',
         lineFrom: 'الخليل',
         lineTo: 'دورا',
-        entryTime: '7:40 AM',
-        exitTime: '7:55 AM',
+        entryTime: '7:40 ص',
+        exitTime: '7:55 ص',
         registrationNumber: 6,
         loadingValidityDate: now.add(const Duration(days: 4)),
       ),
@@ -75,8 +76,8 @@ class DriverRepositoryImpl implements DriverRepository {
         driverName: 'فارس عودة',
         lineFrom: 'الخليل',
         lineTo: 'دورا',
-        entryTime: '7:45 AM',
-        exitTime: '8:00 AM',
+        entryTime: '7:45 ص',
+        exitTime: '8:00 ص',
         registrationNumber: 7,
         loadingValidityDate: now.add(const Duration(days: 6)),
       ),
@@ -85,7 +86,9 @@ class DriverRepositoryImpl implements DriverRepository {
 
   @override
   Future<QueueEntryEntity?> getMyQueueEntry(String idNumber) async {
+    // API: GET /api/driver/queue/me/$idNumber
     final list = await getQueueList();
+    // يُرجع الإدخال الخاص بالسائق الحالي (رقم الدور 5 في المثال)
     return list.firstWhere(
       (e) => e.queuePosition == 5,
       orElse: () => list.first,

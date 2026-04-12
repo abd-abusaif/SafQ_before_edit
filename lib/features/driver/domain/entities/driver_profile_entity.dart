@@ -1,9 +1,9 @@
 // features/driver/domain/entities/driver_profile_entity.dart
 
-// ← معلومات السائق
+// ── معلومات السائق ────────────────────────────────────────────────────────────
 class DriverInfoEntity {
   final String fullName;
-  final String firstName; // ← الاسم الأول فقط للهيدر
+  final String firstName;
   final String idNumber;
   final String phone1;
   final String? phone2;
@@ -42,13 +42,13 @@ class DriverInfoEntity {
   }
 }
 
-// ← معلومات الخط
+// ── معلومات الخط ──────────────────────────────────────────────────────────────
 class LineInfoEntity {
   final String lineNumber;
   final String lineName;
-  final String lineFrom; // ← من
-  final String lineTo; // ← إلى
-  final String route; // ← مسار الخط
+  final String lineFrom;
+  final String lineTo;
+  final String route;
   final String passengerFare;
 
   const LineInfoEntity({
@@ -72,7 +72,7 @@ class LineInfoEntity {
   }
 }
 
-// ← معلومات المالك
+// ── معلومات المالك ────────────────────────────────────────────────────────────
 class OwnerInfoEntity {
   final String ownerName;
   final String ownerId;
@@ -93,7 +93,7 @@ class OwnerInfoEntity {
   }
 }
 
-// ← معلومات المركبة
+// ── معلومات المركبة ───────────────────────────────────────────────────────────
 class VehicleInfoEntity {
   final String vehicleNumber;
   final String vehicleCode;
@@ -105,7 +105,7 @@ class VehicleInfoEntity {
   final String operationExpiry;
   final String vehicleLicExpiry;
   final String insuranceExpiry;
-  final bool loadingAllowed; // ← حالة السماح بالتحميل
+  final bool loadingAllowed;
 
   const VehicleInfoEntity({
     required this.vehicleNumber,

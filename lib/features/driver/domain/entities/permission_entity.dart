@@ -1,7 +1,8 @@
 // features/driver/domain/entities/permission_entity.dart
+
 class PermissionEntity {
   final String id;
-  final String reason; // ← نص حر يكتبه السائق (تحول من dropdown)
+  final String reason;
   final String requestDate;
   final String status; // 'pending' | 'approved' | 'rejected'
   final String? rejectionReason;

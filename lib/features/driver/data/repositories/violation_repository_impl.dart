@@ -1,21 +1,22 @@
+// features/driver/data/repositories/violation_repository_impl.dart
+
 import '../../domain/entities/violation_entity.dart';
 import '../../domain/repositories/violation_repository.dart';
 
 class ViolationRepositoryImpl implements ViolationRepository {
   @override
   Future<List<ViolationEntity>> getMyViolations(String idNumber) async {
-    // ← عند ربط الـ API استبدل بـ:
+    // API: GET /api/driver/violations/$idNumber
     // final response = await http.get(
-    //   Uri.parse('$baseUrl/api/violations/$idNumber'),
+    //   Uri.parse('$baseUrl/api/driver/violations/$idNumber'),
     //   headers: {'Authorization': 'Bearer $token'},
     // );
     // final List data = jsonDecode(response.body);
-    // if (data.isEmpty) return []; // ← مهم: لا يضرب البرنامج
+    // if (data.isEmpty) return [];
     // return data.map((e) => ViolationEntity.fromJson(e)).toList();
 
     await Future.delayed(const Duration(milliseconds: 500));
 
-    // ← Mock: جرب الحالتين
     return [
       const ViolationEntity(
         id: '1',
@@ -23,7 +24,7 @@ class ViolationRepositoryImpl implements ViolationRepository {
         type: 'مخالفة سرعة زائدة',
         amount: 150.0,
         notes: 'تجاوز السرعة المحددة داخل المجمع',
-        blockEntry: false, // ← بدون منع
+        blockEntry: false,
         date: '2026-03-10',
       ),
       const ViolationEntity(
@@ -32,12 +33,12 @@ class ViolationRepositoryImpl implements ViolationRepository {
         type: 'مخالفة عدم دفع الرسوم',
         amount: 300.0,
         notes: null,
-        blockEntry: true, // ← مع منع الدخول
+        blockEntry: true,
         date: '2026-03-15',
       ),
     ];
 
-    // ← Mock: جرب بدون مخالفات
+    // جرّب بدون مخالفات:
     // return [];
   }
 }
