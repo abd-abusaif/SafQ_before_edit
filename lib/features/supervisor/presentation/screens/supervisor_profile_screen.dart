@@ -1,3 +1,5 @@
+// features/supervisor/presentation/screens/supervisor_profile_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -41,9 +43,7 @@ class _SupervisorProfileScreenState extends State<SupervisorProfileScreen> {
     setState(() => _isLoading = true);
     try {
       final session = await SessionManager.getSession();
-      if (session != null) {
-        _currentPassword = session['currentPassword'] ?? '';
-      }
+      if (session != null) _currentPassword = session['currentPassword'] ?? '';
       final profile = await _repo.getProfile(widget.idNumber);
       setState(() => _profile = profile);
     } finally {
@@ -63,6 +63,8 @@ class _SupervisorProfileScreenState extends State<SupervisorProfileScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
+        automaticallyImplyLeading: false,
+        centerTitle: true,
         title: Text(
           'الصفحة الشخصية',
           style: GoogleFonts.cairo(
@@ -71,8 +73,6 @@ class _SupervisorProfileScreenState extends State<SupervisorProfileScreen> {
             fontSize: AppDimensions.fontLarge(context),
           ),
         ),
-        centerTitle: true,
-        automaticallyImplyLeading: false,
       ),
       body: _isLoading
           ? const Center(
@@ -90,8 +90,6 @@ class _SupervisorProfileScreenState extends State<SupervisorProfileScreen> {
                     _buildAvatarSection(),
                     SizedBox(height: AppDimensions.spacingLarge(context)),
                     _buildInfoCard(),
-                    SizedBox(height: AppDimensions.spacingMedium(context)),
-                    _buildLinesCard(),
                     SizedBox(height: AppDimensions.spacingLarge(context)),
                   ],
                 ),
@@ -102,13 +100,12 @@ class _SupervisorProfileScreenState extends State<SupervisorProfileScreen> {
 
   Widget _buildAvatarSection() {
     final isDark = SafQApp.of(context)?.isDark ?? true;
-    final avatarSize = AppDimensions.avatarLarge(context);
-
+    final size = AppDimensions.avatarLarge(context);
     return Column(
       children: [
         Container(
-          width: avatarSize,
-          height: avatarSize,
+          width: size,
+          height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: AppColors.primary.withOpacity(0.2),
@@ -154,11 +151,10 @@ class _SupervisorProfileScreenState extends State<SupervisorProfileScreen> {
           ),
         ),
         SizedBox(height: AppDimensions.spacingMedium(context)),
-
-        // ← زر تعديل كلمة المرور
+        // تعديل كلمة المرور
         TextButton.icon(
           onPressed: () async {
-            final newPassword = await Navigator.push<String>(
+            final np = await Navigator.push<String>(
               context,
               MaterialPageRoute(
                 builder: (_) => ChangePasswordScreen(
@@ -167,9 +163,7 @@ class _SupervisorProfileScreenState extends State<SupervisorProfileScreen> {
                 ),
               ),
             );
-            if (newPassword != null && mounted) {
-              setState(() => _currentPassword = newPassword);
-            }
+            if (np != null && mounted) setState(() => _currentPassword = np);
           },
           icon: Icon(
             Icons.lock_reset,
@@ -196,8 +190,7 @@ class _SupervisorProfileScreenState extends State<SupervisorProfileScreen> {
           ),
         ),
         SizedBox(height: AppDimensions.spacingSmall(context)),
-
-        // ← زر Dark/Light mode
+        // تبديل الثيم
         GestureDetector(
           onTap: () => SafQApp.of(context)?.toggleTheme(),
           child: Container(
@@ -245,196 +238,76 @@ class _SupervisorProfileScreenState extends State<SupervisorProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          _buildCardHeader(
-            'معلومات المشرف',
-            Icons.person_outline,
-            AppColors.primary,
-          ),
-          Padding(
-            padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
-            child: Column(
-              children: [
-                _buildInfoRow(
-                  Icons.person,
-                  'الاسم الرباعي',
-                  _profile?.fullName ?? '',
-                ),
-                Divider(
-                  color: _isDark ? Colors.white38 : Colors.black12,
-                  height: 16,
-                ),
-                _buildInfoRow(
-                  Icons.badge_outlined,
-                  'رقم الهوية',
-                  _profile?.idNumber ?? '',
-                ),
-                Divider(
-                  color: _isDark ? Colors.white38 : Colors.black12,
-                  height: 16,
-                ),
-                _buildInfoRow(
-                  Icons.phone_outlined,
-                  'رقم الهاتف',
-                  _profile?.phone ?? '',
-                ),
-                Divider(
-                  color: _isDark ? Colors.white38 : Colors.black12,
-                  height: 16,
-                ),
-                _buildInfoRow(
-                  Icons.door_front_door_outlined,
-                  'اسم البوابة',
-                  _profile?.gateName ?? '',
-                ),
-              ],
+          // رأس البطاقة
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(
+              horizontal: AppDimensions.spacingMedium(context),
+              vertical: AppDimensions.spacingSmall(context),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLinesCard() {
-    final lines = _profile?.lines ?? [];
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppDimensions.cardRadius(context)),
-        border: Border.all(
-          color: const Color(0xFF4FC3F7).withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          _buildCardHeader(
-            'الخطوط المسؤول عنها',
-            Icons.route_outlined,
-            const Color(0xFF4FC3F7),
-          ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              AppDimensions.spacingMedium(context),
-              AppDimensions.spacingSmall(context),
-              AppDimensions.spacingMedium(context),
-              AppDimensions.spacingXSmall(context),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(AppDimensions.cardRadius(context)),
+                topRight: Radius.circular(AppDimensions.cardRadius(context)),
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Text(
-                  '${lines.length} خطوط',
+                  'المعلومات الشخصية',
                   style: GoogleFonts.cairo(
-                    color: _isDark ? AppColors.textSecondary : Colors.black54,
-                    fontSize: AppDimensions.fontXSmall(context),
+                    color: AppColors.primary,
+                    fontSize: AppDimensions.fontMedium(context),
+                    fontWeight: FontWeight.bold,
                   ),
+                ),
+                SizedBox(width: AppDimensions.spacingSmall(context)),
+                Icon(
+                  Icons.person_outline,
+                  color: AppColors.primary,
+                  size: AppDimensions.iconMedium(context),
                 ),
               ],
             ),
           ),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.fromLTRB(
-              AppDimensions.spacingMedium(context),
-              0,
-              AppDimensions.spacingMedium(context),
-              AppDimensions.spacingMedium(context),
+          Padding(
+            padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
+            child: Column(
+              children: [
+                _infoRow(
+                  Icons.person,
+                  'الاسم',
+                  _profile?.fullName ?? widget.supervisorName,
+                ),
+                Divider(
+                  color: _isDark ? Colors.white12 : Colors.black12,
+                  height: 20,
+                ),
+                _infoRow(
+                  Icons.badge_outlined,
+                  'رقم الهوية',
+                  _profile?.idNumber ?? widget.idNumber,
+                ),
+                Divider(
+                  color: _isDark ? Colors.white12 : Colors.black12,
+                  height: 20,
+                ),
+                _infoRow(
+                  Icons.phone_outlined,
+                  'رقم الهاتف',
+                  _profile?.phone ?? '---',
+                ),
+              ],
             ),
-            itemCount: lines.length,
-            separatorBuilder: (_, _) => Divider(
-              color: _isDark ? Colors.white38 : Colors.black12,
-              height: 16,
-            ),
-            itemBuilder: (context, index) {
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: AppDimensions.avatarSmall(context) * 0.65,
-                    height: AppDimensions.avatarSmall(context) * 0.65,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: const Color(0xFF4FC3F7).withOpacity(0.15),
-                      border: Border.all(
-                        color: const Color(0xFF4FC3F7).withOpacity(0.4),
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '${index + 1}',
-                        style: GoogleFonts.cairo(
-                          color: const Color(0xFF4FC3F7),
-                          fontSize: AppDimensions.fontXSmall(context),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Text(
-                        lines[index],
-                        style: GoogleFonts.cairo(
-                          color: _isDark
-                              ? AppColors.textPrimary
-                              : Colors.black87,
-                          fontSize: AppDimensions.fontMedium(context),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      SizedBox(width: AppDimensions.spacingSmall(context)),
-                      Icon(
-                        Icons.route_outlined,
-                        color: const Color(0xFF4FC3F7),
-                        size: AppDimensions.iconSmall(context),
-                      ),
-                    ],
-                  ),
-                ],
-              );
-            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCardHeader(String title, IconData icon, Color color) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(
-        horizontal: AppDimensions.spacingMedium(context),
-        vertical: AppDimensions.spacingSmall(context),
-      ),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(AppDimensions.cardRadius(context)),
-          topRight: Radius.circular(AppDimensions.cardRadius(context)),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Text(
-            title,
-            style: GoogleFonts.cairo(
-              color: color,
-              fontSize: AppDimensions.fontMedium(context),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(width: AppDimensions.spacingSmall(context)),
-          Icon(icon, color: color, size: AppDimensions.iconMedium(context)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _infoRow(IconData icon, String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -455,7 +328,7 @@ class _SupervisorProfileScreenState extends State<SupervisorProfileScreen> {
                 fontSize: AppDimensions.fontXSmall(context),
               ),
             ),
-            SizedBox(width: AppDimensions.spacingSmall(context)),
+            SizedBox(width: AppDimensions.spacingXSmall(context)),
             Icon(
               icon,
               color: AppColors.primary.withOpacity(0.7),

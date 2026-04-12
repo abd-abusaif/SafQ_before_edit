@@ -1,3 +1,5 @@
+// features/supervisor/presentation/widgets/vehicle_item_widget.dart
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -29,7 +31,7 @@ class VehicleItemWidget extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // ← الحالة (يسار)
+          // الحالة (يسار)
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -61,8 +63,7 @@ class VehicleItemWidget extends StatelessWidget {
                 ),
             ],
           ),
-
-          // ← المعلومات (يمين)
+          // المعلومات (يمين)
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [

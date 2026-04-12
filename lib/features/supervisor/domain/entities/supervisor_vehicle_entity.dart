@@ -1,3 +1,5 @@
+// features/supervisor/domain/entities/supervisor_vehicle_entity.dart
+
 class SupervisorVehicleEntity {
   final String driverName;
   final String vehiclePlate;
