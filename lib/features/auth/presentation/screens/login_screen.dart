@@ -1,3 +1,5 @@
+// features/auth/presentation/screens/login_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/utils/session_manager.dart';
@@ -6,8 +8,8 @@ import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../../driver/presentation/screens/driver_home_screen.dart';
-import '../../../supervisor/presentation/screens/supervisor_home_screen.dart';
-import '../../../security/presentation/screens/security_home_screen.dart';
+import '../../../supervisor/presentation/screens/supervisor_main_navigation.dart';
+import '../../../security/presentation/screens/security_main_navigation.dart';
 import '../../../shared/presentation/widgets/main_navigation.dart';
 import '../../domain/entities/user_entity.dart';
 
@@ -29,11 +31,8 @@ class _LoginScreenState extends State<LoginScreen> {
   String _selectedRole = 'driver';
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
-
-  // ← الترجمة
   AppLocalizations get l => AppLocalizations.of(context);
 
-  // ← الأدوار تُترجم ديناميكياً
   Map<String, String> get _roles => {
     'driver': l.driver,
     'supervisor': l.supervisor,
@@ -78,7 +77,6 @@ class _LoginScreenState extends State<LoginScreen> {
       final userByIdNumber = _mockUsers
           .where((u) => u['idNumber'] == idNumber)
           .toList();
-
       if (userByIdNumber.isEmpty) {
         _showErrorDialog(l.wrongCredentials, l.wrongCredentialsMsg);
         return;
@@ -87,7 +85,6 @@ class _LoginScreenState extends State<LoginScreen> {
       final userByPassword = userByIdNumber
           .where((u) => u['password'] == password)
           .toList();
-
       if (userByPassword.isEmpty) {
         _showErrorDialog(l.wrongCredentials, l.wrongCredentialsMsg);
         return;
@@ -108,6 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       switch (user.role) {
+        // ── السائق ──────────────────────────────────────────────────────
         case 'driver':
           await SessionManager.saveSession(
             idNumber: idNumber,
@@ -136,6 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
           );
           break;
 
+        // ── المشرف → SupervisorMainNavigation ──────────────────────────
         case 'supervisor':
           await SessionManager.saveSession(
             idNumber: idNumber,
@@ -148,20 +147,15 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => MainNavigation(
-                homeScreen: SupervisorHomeScreen(
-                  supervisorName: mockUser['name']!,
-                  idNumber: idNumber,
-                ),
-                driverName: mockUser['name']!,
+              builder: (_) => SupervisorMainNavigation(
+                supervisorName: mockUser['name']!,
                 idNumber: idNumber,
-                role: 'supervisor',
-                currentPassword: password,
               ),
             ),
           );
           break;
 
+        // ── الأمن → SecurityMainNavigation (بدون permissions) ──────────
         case 'security':
           await SessionManager.saveSession(
             idNumber: idNumber,
@@ -174,15 +168,9 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => MainNavigation(
-                homeScreen: SecurityHomeScreen(
-                  securityName: mockUser['name']!,
-                  idNumber: idNumber,
-                ),
-                driverName: mockUser['name']!,
+              builder: (_) => SecurityMainNavigation(
+                securityName: mockUser['name']!,
                 idNumber: idNumber,
-                role: 'security',
-                currentPassword: password,
               ),
             ),
           );
@@ -198,7 +186,6 @@ class _LoginScreenState extends State<LoginScreen> {
   void _showErrorDialog(String title, String message) {
     if (!mounted) return;
     setState(() => _isLoading = false);
-
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -271,7 +258,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ← اتجاه النص حسب اللغة
     final textAlign = l.isArabic ? TextAlign.right : TextAlign.left;
     final textDir = l.isArabic ? TextDirection.rtl : TextDirection.ltr;
 
@@ -295,7 +281,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 SizedBox(height: AppDimensions.spacingLarge(context)),
-
                 Text(
                   l.welcome,
                   textAlign: textAlign,
@@ -314,8 +299,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 SizedBox(height: AppDimensions.spacingLarge(context)),
-
-                // ← رقم الهوية
+                // رقم الهوية
                 TextFormField(
                   controller: _userCtrl,
                   textAlign: textAlign,
@@ -342,8 +326,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 SizedBox(height: AppDimensions.spacingMedium(context)),
-
-                // ← كلمة المرور
+                // كلمة المرور
                 TextFormField(
                   controller: _passCtrl,
                   textAlign: textAlign,
@@ -382,8 +365,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 SizedBox(height: AppDimensions.spacingMedium(context)),
-
-                // ← نوع المستخدم
+                // نوع المستخدم
                 DropdownButtonFormField<String>(
                   value: _selectedRole,
                   dropdownColor: Theme.of(context).colorScheme.surface,
@@ -399,17 +381,18 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: AppColors.primary,
                     ),
                   ),
-                  items: _roles.entries.map((e) {
-                    return DropdownMenuItem(
-                      value: e.key,
-                      child: Text(e.value, textAlign: textAlign),
-                    );
-                  }).toList(),
+                  items: _roles.entries
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e.key,
+                          child: Text(e.value, textAlign: textAlign),
+                        ),
+                      )
+                      .toList(),
                   onChanged: (v) => setState(() => _selectedRole = v!),
                 ),
                 SizedBox(height: AppDimensions.spacingLarge(context)),
-
-                // ← زر تسجيل الدخول
+                // زر تسجيل الدخول
                 SizedBox(
                   width: double.infinity,
                   height: AppDimensions.buttonHeight(context),
@@ -438,8 +421,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 SizedBox(height: AppDimensions.spacingMedium(context)),
-
-                // ← نسيت كلمة المرور
                 Center(
                   child: TextButton(
                     onPressed: () {},
