@@ -51,11 +51,11 @@ class DriverProfileRepositoryImpl implements DriverProfileRepository {
     // API: GET /api/driver/vehicle/$idNumber
     await Future.delayed(const Duration(milliseconds: 500));
     return const VehicleInfoEntity(
-      vehicleNumber: 'ر ح ن 123',
+      vehicleNumber: '6 2181-30',
       vehicleCode: 'VC-409581',
       chassisNumber: 'WVWZZZ1KZ9M012345',
-      company: 'فولكسفاغن',
-      model: 'كرافتر',
+      company: 'Volkswagen',
+      model: 'Crafter',
       productionYear: '2019',
       seats: '14',
       operationExpiry: '2025-04-22',
