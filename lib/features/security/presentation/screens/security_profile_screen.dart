@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/session_manager.dart';
 import '../../../shared/presentation/screens/change_password_screen.dart';
 import '../../../../main.dart';
@@ -28,6 +29,7 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
   String _phone = '';
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  AppLocalizations get l => AppLocalizations.of(context);
 
   @override
   void initState() {
@@ -41,7 +43,7 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
       final session = await SessionManager.getSession();
       if (session != null) {
         _currentPassword = session['currentPassword'] ?? '';
-        // API: GET /api/security/profile/$idNumber → phone
+        // API: GET /api/security/profile/$idNumber
         _phone = session['phone'] ?? '0599000000';
       }
     } finally {
@@ -57,42 +59,46 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        automaticallyImplyLeading: false,
-        centerTitle: true,
-        title: Text(
-          'الصفحة الشخصية',
-          style: GoogleFonts.cairo(
-            color: _isDark ? AppColors.textPrimary : Colors.black87,
-            fontWeight: FontWeight.bold,
-            fontSize: AppDimensions.fontLarge(context),
+    final isRtl = l.isArabic;
+    return Directionality(
+      textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          automaticallyImplyLeading: false,
+          centerTitle: true,
+          title: Text(
+            l.personalPage,
+            style: GoogleFonts.cairo(
+              color: _isDark ? AppColors.textPrimary : Colors.black87,
+              fontWeight: FontWeight.bold,
+              fontSize: AppDimensions.fontLarge(context),
+            ),
           ),
         ),
-      ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            )
-          : RefreshIndicator(
-              color: AppColors.primary,
-              onRefresh: _loadData,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
-                child: Column(
-                  children: [
-                    SizedBox(height: AppDimensions.spacingSmall(context)),
-                    _buildAvatarSection(),
-                    SizedBox(height: AppDimensions.spacingLarge(context)),
-                    _buildInfoCard(),
-                    SizedBox(height: AppDimensions.spacingLarge(context)),
-                  ],
+        body: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              )
+            : RefreshIndicator(
+                color: AppColors.primary,
+                onRefresh: _loadData,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
+                  child: Column(
+                    children: [
+                      SizedBox(height: AppDimensions.spacingSmall(context)),
+                      _buildAvatarSection(),
+                      SizedBox(height: AppDimensions.spacingLarge(context)),
+                      _buildInfoCard(),
+                      SizedBox(height: AppDimensions.spacingLarge(context)),
+                    ],
+                  ),
                 ),
               ),
-            ),
+      ),
     );
   }
 
@@ -124,6 +130,7 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
         SizedBox(height: AppDimensions.spacingSmall(context)),
         Text(
           widget.securityName,
+          textAlign: TextAlign.center,
           style: GoogleFonts.cairo(
             color: _isDark ? AppColors.textPrimary : Colors.black87,
             fontSize: AppDimensions.fontLarge(context),
@@ -142,7 +149,7 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
             border: Border.all(color: AppColors.primary.withOpacity(0.4)),
           ),
           child: Text(
-            'موظف أمن',
+            l.security,
             style: GoogleFonts.cairo(
               color: AppColors.primary,
               fontSize: AppDimensions.fontSmall(context),
@@ -150,9 +157,12 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
           ),
         ),
         SizedBox(height: AppDimensions.spacingMedium(context)),
-        // تعديل كلمة المرور
-        TextButton.icon(
-          onPressed: () async {
+
+        // زر تعديل كلمة المرور
+        _buildActionButton(
+          icon: Icons.lock_reset,
+          label: l.editPassword,
+          onTap: () async {
             final np = await Navigator.push<String>(
               context,
               MaterialPageRoute(
@@ -164,65 +174,66 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
             );
             if (np != null && mounted) setState(() => _currentPassword = np);
           },
-          icon: Icon(
-            Icons.lock_reset,
-            color: AppColors.primary,
-            size: AppDimensions.iconSmall(context),
-          ),
-          label: Text(
-            'تعديل كلمة المرور',
-            style: GoogleFonts.cairo(
-              color: AppColors.primary,
-              fontSize: AppDimensions.fontSmall(context),
-            ),
-          ),
-          style: TextButton.styleFrom(
-            backgroundColor: AppColors.primary.withOpacity(0.08),
-            padding: EdgeInsets.symmetric(
-              horizontal: AppDimensions.spacingMedium(context),
-              vertical: AppDimensions.spacingXSmall(context),
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-              side: BorderSide(color: AppColors.primary.withOpacity(0.3)),
-            ),
-          ),
         ),
         SizedBox(height: AppDimensions.spacingSmall(context)),
-        // تبديل الثيم
-        GestureDetector(
+
+        // زر تبديل الثيم
+        _buildActionButton(
+          icon: isDark ? Icons.light_mode : Icons.dark_mode,
+          label: isDark ? l.switchLight : l.switchDark,
           onTap: () => SafQApp.of(context)?.toggleTheme(),
-          child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: AppDimensions.spacingMedium(context),
-              vertical: AppDimensions.spacingXSmall(context),
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  isDark ? Icons.light_mode : Icons.dark_mode,
-                  color: AppColors.primary,
-                  size: AppDimensions.iconSmall(context),
-                ),
-                SizedBox(width: AppDimensions.spacingSmall(context)),
-                Text(
-                  isDark ? 'التحويل للفاتح' : 'التحويل للداكن',
-                  style: GoogleFonts.cairo(
-                    color: AppColors.primary,
-                    fontSize: AppDimensions.fontSmall(context),
-                  ),
-                ),
-              ],
-            ),
-          ),
+        ),
+        SizedBox(height: AppDimensions.spacingSmall(context)),
+
+        // زر تغيير اللغة
+        _buildActionButton(
+          icon: Icons.language,
+          label: l.switchLanguage,
+          onTap: () {
+            final newLang = l.isArabic ? 'en' : 'ar';
+            SafQApp.of(context)?.changeLanguage(newLang);
+          },
         ),
       ],
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: AppDimensions.spacingMedium(context),
+          vertical: AppDimensions.spacingXSmall(context),
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: AppColors.primary,
+              size: AppDimensions.iconSmall(context),
+            ),
+            SizedBox(width: AppDimensions.spacingSmall(context)),
+            Text(
+              label,
+              style: GoogleFonts.cairo(
+                color: AppColors.primary,
+                fontSize: AppDimensions.fontSmall(context),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -235,9 +246,8 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
         border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 1),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // رأس البطاقة
           Container(
             width: double.infinity,
             padding: EdgeInsets.symmetric(
@@ -252,21 +262,20 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
               ),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                Icon(
+                  Icons.security,
+                  color: AppColors.primary,
+                  size: AppDimensions.iconMedium(context),
+                ),
+                SizedBox(width: AppDimensions.spacingSmall(context)),
                 Text(
-                  'المعلومات الشخصية',
+                  l.translate('personal_info'),
                   style: GoogleFonts.cairo(
                     color: AppColors.primary,
                     fontSize: AppDimensions.fontMedium(context),
                     fontWeight: FontWeight.bold,
                   ),
-                ),
-                SizedBox(width: AppDimensions.spacingSmall(context)),
-                Icon(
-                  Icons.security,
-                  color: AppColors.primary,
-                  size: AppDimensions.iconMedium(context),
                 ),
               ],
             ),
@@ -275,19 +284,27 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
             padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
             child: Column(
               children: [
-                _infoRow(Icons.person, 'الاسم', widget.securityName),
+                _infoRow(
+                  Icons.person,
+                  l.translate('name_label'),
+                  widget.securityName,
+                ),
                 Divider(
                   color: _isDark ? Colors.white12 : Colors.black12,
                   height: 20,
                 ),
-                _infoRow(Icons.badge_outlined, 'رقم الهوية', widget.idNumber),
+                _infoRow(
+                  Icons.badge_outlined,
+                  l.translate('id_label'),
+                  widget.idNumber,
+                ),
                 Divider(
                   color: _isDark ? Colors.white12 : Colors.black12,
                   height: 20,
                 ),
                 _infoRow(
                   Icons.phone_outlined,
-                  'رقم الهاتف',
+                  l.translate('phone_info_label'),
                   _phone.isEmpty ? '---' : _phone,
                 ),
               ],
@@ -299,33 +316,45 @@ class _SecurityProfileScreenState extends State<SecurityProfileScreen> {
   }
 
   Widget _infoRow(IconData icon, String label, String value) {
+    final isRtl = l.isArabic;
+    final isNumericValue = RegExp(r'^[\d\s\+\-\.]+$').hasMatch(value.trim());
+
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          value,
-          style: GoogleFonts.cairo(
-            color: _isDark ? AppColors.textPrimary : Colors.black87,
-            fontSize: AppDimensions.fontMedium(context),
-            fontWeight: FontWeight.w600,
+        Icon(
+          icon,
+          color: AppColors.primary.withOpacity(0.7),
+          size: AppDimensions.iconSmall(context),
+        ),
+        SizedBox(width: AppDimensions.spacingXSmall(context)),
+        Expanded(
+          flex: 2,
+          child: Text(
+            label,
+            style: GoogleFonts.cairo(
+              color: _isDark ? AppColors.textSecondary : Colors.black54,
+              fontSize: AppDimensions.fontXSmall(context),
+            ),
           ),
         ),
-        Row(
-          children: [
-            Text(
-              label,
+        Expanded(
+          flex: 3,
+          child: Directionality(
+            textDirection: isNumericValue
+                ? TextDirection.ltr
+                : (isRtl ? TextDirection.rtl : TextDirection.ltr),
+            child: Text(
+              value,
+              textAlign: isNumericValue
+                  ? (isRtl ? TextAlign.right : TextAlign.left)
+                  : (isRtl ? TextAlign.end : TextAlign.start),
               style: GoogleFonts.cairo(
-                color: _isDark ? AppColors.textSecondary : Colors.black54,
-                fontSize: AppDimensions.fontXSmall(context),
+                color: _isDark ? AppColors.textPrimary : Colors.black87,
+                fontSize: AppDimensions.fontSmall(context),
+                fontWeight: FontWeight.w600,
               ),
             ),
-            SizedBox(width: AppDimensions.spacingXSmall(context)),
-            Icon(
-              icon,
-              color: AppColors.primary.withOpacity(0.7),
-              size: AppDimensions.iconSmall(context),
-            ),
-          ],
+          ),
         ),
       ],
     );

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/session_manager.dart';
 import '../../data/repositories/security_repository_impl.dart';
 import '../../domain/entities/security_vehicle_entity.dart';
@@ -24,6 +25,7 @@ class _SecurityNotificationsScreenState
   String _idNumber = '';
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  AppLocalizations get l => AppLocalizations.of(context);
   int get _pendingCount => _notifications.where((n) => !n.isHandled).length;
 
   @override
@@ -46,90 +48,95 @@ class _SecurityNotificationsScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        automaticallyImplyLeading: false,
-        centerTitle: true,
-        title: Text(
-          'الإشعارات',
-          style: GoogleFonts.cairo(
-            color: _isDark ? AppColors.textPrimary : Colors.black87,
-            fontWeight: FontWeight.bold,
-            fontSize: AppDimensions.fontLarge(context),
+    return Directionality(
+      textDirection: l.isArabic ? TextDirection.rtl : TextDirection.ltr,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          automaticallyImplyLeading: false,
+          centerTitle: true,
+          title: Text(
+            l.notificationsTitle,
+            style: GoogleFonts.cairo(
+              color: _isDark ? AppColors.textPrimary : Colors.black87,
+              fontWeight: FontWeight.bold,
+              fontSize: AppDimensions.fontLarge(context),
+            ),
           ),
-        ),
-        actions: [
-          if (_pendingCount > 0)
-            Padding(
-              padding: EdgeInsets.only(
-                left: AppDimensions.spacingSmall(context),
-              ),
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppDimensions.spacingSmall(context),
-                  vertical: AppDimensions.spacingXSmall(context),
+          actions: [
+            if (_pendingCount > 0)
+              Padding(
+                padding: EdgeInsets.only(
+                  left: l.isArabic ? AppDimensions.spacingSmall(context) : 0,
+                  right: l.isArabic ? 0 : AppDimensions.spacingSmall(context),
                 ),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  'يحتاج تدخل: $_pendingCount',
-                  style: GoogleFonts.cairo(
-                    color: Colors.redAccent,
-                    fontSize: AppDimensions.fontXSmall(context),
-                    fontWeight: FontWeight.bold,
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppDimensions.spacingSmall(context),
+                    vertical: AppDimensions.spacingXSmall(context),
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${l.translate('needs_attention_count')} $_pendingCount',
+                    style: GoogleFonts.cairo(
+                      color: Colors.redAccent,
+                      fontSize: AppDimensions.fontXSmall(context),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-            ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            )
-          : RefreshIndicator(
-              color: AppColors.primary,
-              onRefresh: _loadData,
-              child: _notifications.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.notifications_off_outlined,
-                            color: _isDark
-                                ? AppColors.textSecondary
-                                : Colors.black26,
-                            size: AppDimensions.iconXLarge(context) * 1.5,
-                          ),
-                          SizedBox(
-                            height: AppDimensions.spacingMedium(context),
-                          ),
-                          Text(
-                            'لا توجد إشعارات مركبات مرفوضة',
-                            style: GoogleFonts.cairo(
+          ],
+        ),
+        body: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              )
+            : RefreshIndicator(
+                color: AppColors.primary,
+                onRefresh: _loadData,
+                child: _notifications.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.notifications_off_outlined,
                               color: _isDark
                                   ? AppColors.textSecondary
-                                  : Colors.black54,
-                              fontSize: AppDimensions.fontMedium(context),
+                                  : Colors.black26,
+                              size: AppDimensions.iconXLarge(context) * 1.5,
                             ),
-                          ),
-                        ],
+                            SizedBox(
+                              height: AppDimensions.spacingMedium(context),
+                            ),
+                            Text(
+                              l.translate('rejected_vehicle_notification'),
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.cairo(
+                                color: _isDark
+                                    ? AppColors.textSecondary
+                                    : Colors.black54,
+                                fontSize: AppDimensions.fontMedium(context),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: EdgeInsets.all(
+                          AppDimensions.spacingMedium(context),
+                        ),
+                        itemCount: _notifications.length,
+                        itemBuilder: (_, i) =>
+                            _buildNotificationCard(_notifications[i]),
                       ),
-                    )
-                  : ListView.builder(
-                      padding: EdgeInsets.all(
-                        AppDimensions.spacingMedium(context),
-                      ),
-                      itemCount: _notifications.length,
-                      itemBuilder: (_, i) =>
-                          _buildNotificationCard(_notifications[i]),
-                    ),
-            ),
+              ),
+      ),
     );
   }
 
@@ -143,8 +150,8 @@ class _SecurityNotificationsScreenState
         : Colors.redAccent.withOpacity(0.08);
     final statusColor = handled ? Colors.green : Colors.redAccent;
     final statusLabel = handled
-        ? 'تم التعامل مع الحالة ✓'
-        : 'مركبة محظورة - يحتاج تدخل';
+        ? '${l.translate('handled_status')} \u2713'
+        : l.translate('needs_intervention');
     final statusIcon = handled ? Icons.check_circle : Icons.error_outline;
 
     return Container(
@@ -155,9 +162,8 @@ class _SecurityNotificationsScreenState
         border: Border.all(color: borderColor, width: 1.5),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // رأس الإشعار
           Container(
             width: double.infinity,
             padding: EdgeInsets.symmetric(
@@ -174,11 +180,15 @@ class _SecurityNotificationsScreenState
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  n.entryTime,
-                  style: GoogleFonts.cairo(
-                    color: _isDark ? AppColors.textSecondary : Colors.black54,
-                    fontSize: AppDimensions.fontXSmall(context),
+                // الوقت - LTR دائماً
+                Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Text(
+                    n.entryTime,
+                    style: GoogleFonts.cairo(
+                      color: _isDark ? AppColors.textSecondary : Colors.black54,
+                      fontSize: AppDimensions.fontXSmall(context),
+                    ),
                   ),
                 ),
                 Row(
@@ -202,29 +212,35 @@ class _SecurityNotificationsScreenState
               ],
             ),
           ),
-          // التفاصيل
           Padding(
             padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
             child: Column(
               children: [
-                _row(Icons.person_outline, 'السائق', n.driverName),
+                _row(
+                  Icons.person_outline,
+                  l.translate('driver_label'),
+                  n.driverName,
+                ),
                 _divider(),
                 _row(
                   Icons.directions_car_outlined,
-                  'رقم المركبة',
+                  l.translate('vehicle_label'),
                   n.vehiclePlate,
                 ),
                 _divider(),
                 _row(
                   Icons.route_outlined,
-                  'الخط',
+                  l.translate('line_route_label'),
                   '${n.lineFrom} - ${n.lineTo}',
                 ),
                 if (n.rejectionReason != null) ...[
                   _divider(),
-                  _row(Icons.info_outline, 'سبب الرفض', n.rejectionReason!),
+                  _row(
+                    Icons.info_outline,
+                    l.translate('rejection_reason_label'),
+                    n.rejectionReason!,
+                  ),
                 ],
-                // بانر "تم التعامل" عند اكتماله من المشرف
                 if (handled) ...[
                   SizedBox(height: AppDimensions.spacingSmall(context)),
                   Container(
@@ -249,7 +265,7 @@ class _SecurityNotificationsScreenState
                         ),
                         SizedBox(width: AppDimensions.spacingXSmall(context)),
                         Text(
-                          'تم التعامل مع الحالة من قِبَل المشرف',
+                          l.translate('handled_by_supervisor'),
                           style: GoogleFonts.cairo(
                             color: Colors.green,
                             fontSize: AppDimensions.fontXSmall(context),
@@ -269,38 +285,44 @@ class _SecurityNotificationsScreenState
   }
 
   Widget _row(IconData icon, String label, String value) {
+    final isRtl = l.isArabic;
+    final isNumeric = RegExp(r'^[\d\s\+\-\. ]+$').hasMatch(value.trim());
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Flexible(
+        Icon(
+          icon,
+          color: AppColors.primary.withOpacity(0.7),
+          size: AppDimensions.iconSmall(context),
+        ),
+        SizedBox(width: AppDimensions.spacingXSmall(context)),
+        Expanded(
+          flex: 2,
           child: Text(
-            value,
-            textAlign: TextAlign.left,
+            label,
             style: GoogleFonts.cairo(
-              color: _isDark ? AppColors.textPrimary : Colors.black87,
-              fontSize: AppDimensions.fontSmall(context),
-              fontWeight: FontWeight.w600,
+              color: _isDark ? AppColors.textSecondary : Colors.black54,
+              fontSize: AppDimensions.fontXSmall(context),
             ),
           ),
         ),
-        SizedBox(width: AppDimensions.spacingSmall(context)),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
+        Expanded(
+          flex: 3,
+          child: Directionality(
+            textDirection: isNumeric
+                ? TextDirection.ltr
+                : (isRtl ? TextDirection.rtl : TextDirection.ltr),
+            child: Text(
+              value,
+              textAlign: isNumeric
+                  ? (isRtl ? TextAlign.right : TextAlign.left)
+                  : (isRtl ? TextAlign.end : TextAlign.start),
               style: GoogleFonts.cairo(
-                color: _isDark ? AppColors.textSecondary : Colors.black54,
-                fontSize: AppDimensions.fontXSmall(context),
+                color: _isDark ? AppColors.textPrimary : Colors.black87,
+                fontSize: AppDimensions.fontSmall(context),
+                fontWeight: FontWeight.w600,
               ),
             ),
-            SizedBox(width: AppDimensions.spacingXSmall(context)),
-            Icon(
-              icon,
-              color: AppColors.primary.withOpacity(0.7),
-              size: AppDimensions.iconSmall(context),
-            ),
-          ],
+          ),
         ),
       ],
     );

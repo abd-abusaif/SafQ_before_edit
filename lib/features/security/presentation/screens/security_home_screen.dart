@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../data/repositories/security_repository_impl.dart';
 import '../../domain/entities/security_vehicle_entity.dart';
 
@@ -31,6 +32,7 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
 
   String get _firstName => widget.securityName.trim().split(' ').first;
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  AppLocalizations get l => AppLocalizations.of(context);
 
   @override
   void initState() {
@@ -53,15 +55,11 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
       final vehicles = await _repo.getVehicles(widget.idNumber);
       if (!mounted) return;
 
-      // إلغاء المؤقتات السابقة قبل إعادة البناء (لتفادي تسرّب المؤقتات
-      // أو تشغيل أكثر من مؤقت لنفس المركبة عند السحب للتحديث)
       for (final t in _approvedTimers.values) {
         t.cancel();
       }
       _approvedTimers.clear();
 
-      // تصفية المركبات المنتهية مسبقاً (مضى عليها أكثر من المهلة)
-      // قبل تعيينها للـ state حتى لا نضطر للحذف أثناء التكرار.
       final now = DateTime.now();
       const maxAge = Duration(minutes: 1);
       final activeVehicles = vehicles.where((v) {
@@ -71,9 +69,6 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
 
       setState(() => _vehicles = activeVehicles);
 
-      // نُشغّل المؤقتات بعد setState، ونتكرر على نسخة مستقلة
-      // (activeVehicles) لا على _vehicles نفسها — هذا يحمي من
-      // ConcurrentModificationError حتى لو تم الحذف لاحقاً.
       for (final v in activeVehicles) {
         if (v.isApproved) _startApprovedTimer(v);
       }
@@ -85,8 +80,6 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
   void _startApprovedTimer(SecurityVehicleEntity vehicle) {
     final elapsed = DateTime.now().difference(vehicle.entryDateTime);
     final remaining = const Duration(minutes: 1) - elapsed;
-    // في حال لم يتبقّ وقت: نؤجّل الحذف للـ frame التالي حتى لا
-    // نعدّل القائمة أثناء تكرار المتصل علينا.
     if (remaining.isNegative || remaining == Duration.zero) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _removeVehicle(vehicle.id);
@@ -114,121 +107,132 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: AppColors.primary),
-              )
-            : RefreshIndicator(
-                color: AppColors.primary,
-                onRefresh: _loadData,
-                child: CustomScrollView(
-                  slivers: [
-                    SliverToBoxAdapter(child: _buildHeader()),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          AppDimensions.spacingMedium(context),
-                          AppDimensions.spacingLarge(context),
-                          AppDimensions.spacingMedium(context),
-                          AppDimensions.spacingSmall(context),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: AppDimensions.spacingSmall(context),
-                                vertical: AppDimensions.spacingXSmall(context),
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: Colors.green.withOpacity(0.3),
+    return Directionality(
+      textDirection: l.isArabic ? TextDirection.rtl : TextDirection.ltr,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SafeArea(
+          child: _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                )
+              : RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: _loadData,
+                  child: CustomScrollView(
+                    slivers: [
+                      SliverToBoxAdapter(child: _buildHeader()),
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            AppDimensions.spacingMedium(context),
+                            AppDimensions.spacingLarge(context),
+                            AppDimensions.spacingMedium(context),
+                            AppDimensions.spacingSmall(context),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // شارة المقبول - يسار (في RTL)
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: AppDimensions.spacingSmall(
+                                    context,
+                                  ),
+                                  vertical: AppDimensions.spacingXSmall(
+                                    context,
+                                  ),
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: Colors.green.withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Text(
+                                  '${l.translate('approved_count')}: ${_vehicles.where((v) => v.isApproved).length}',
+                                  style: GoogleFonts.cairo(
+                                    color: Colors.green,
+                                    fontSize: AppDimensions.fontXSmall(context),
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                              child: Text(
-                                'مقبول: ${_vehicles.where((v) => v.isApproved).length}',
+                              // عنوان القسم
+                              Text(
+                                l.vehicleStatus,
                                 style: GoogleFonts.cairo(
-                                  color: Colors.green,
-                                  fontSize: AppDimensions.fontXSmall(context),
+                                  color: _isDark
+                                      ? AppColors.textPrimary
+                                      : Colors.black87,
+                                  fontSize: AppDimensions.fontLarge(context),
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            ),
-                            Text(
-                              'حالة المركبات',
-                              style: GoogleFonts.cairo(
-                                color: _isDark
-                                    ? AppColors.textPrimary
-                                    : Colors.black87,
-                                fontSize: AppDimensions.fontLarge(context),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    _vehicles.isEmpty
-                        ? SliverToBoxAdapter(
-                            child: Padding(
-                              padding: EdgeInsets.all(
-                                AppDimensions.spacingXLarge(context),
-                              ),
-                              child: Center(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.directions_car_outlined,
-                                      color: _isDark
-                                          ? AppColors.textSecondary
-                                          : Colors.black26,
-                                      size:
-                                          AppDimensions.iconXLarge(context) *
-                                          1.5,
-                                    ),
-                                    SizedBox(
-                                      height: AppDimensions.spacingMedium(
-                                        context,
-                                      ),
-                                    ),
-                                    Text(
-                                      'لا توجد مركبات حالياً',
-                                      style: GoogleFonts.cairo(
+                      _vehicles.isEmpty
+                          ? SliverToBoxAdapter(
+                              child: Padding(
+                                padding: EdgeInsets.all(
+                                  AppDimensions.spacingXLarge(context),
+                                ),
+                                child: Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.directions_car_outlined,
                                         color: _isDark
                                             ? AppColors.textSecondary
-                                            : Colors.black54,
-                                        fontSize: AppDimensions.fontMedium(
+                                            : Colors.black26,
+                                        size:
+                                            AppDimensions.iconXLarge(context) *
+                                            1.5,
+                                      ),
+                                      SizedBox(
+                                        height: AppDimensions.spacingMedium(
                                           context,
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                      Text(
+                                        l.noVehicles,
+                                        style: GoogleFonts.cairo(
+                                          color: _isDark
+                                              ? AppColors.textSecondary
+                                              : Colors.black54,
+                                          fontSize: AppDimensions.fontMedium(
+                                            context,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            )
+                          : SliverPadding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: AppDimensions.spacingMedium(
+                                  context,
+                                ),
+                              ),
+                              sliver: SliverList(
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) =>
+                                      _buildVehicleCard(_vehicles[index]),
+                                  childCount: _vehicles.length,
                                 ),
                               ),
                             ),
-                          )
-                        : SliverPadding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: AppDimensions.spacingMedium(context),
-                            ),
-                            sliver: SliverList(
-                              delegate: SliverChildBuilderDelegate(
-                                (context, index) =>
-                                    _buildVehicleCard(_vehicles[index]),
-                                childCount: _vehicles.length,
-                              ),
-                            ),
-                          ),
-                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                  ],
+                      const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                    ],
+                  ),
                 ),
-              ),
+        ),
       ),
     );
   }
@@ -265,7 +269,7 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
             ),
           ),
           Text(
-            'أهلاً $_firstName',
+            '${l.welcomeUser} $_firstName',
             style: GoogleFonts.cairo(
               color: _isDark ? AppColors.textPrimary : Colors.black87,
               fontSize: AppDimensions.fontLarge(context),
@@ -279,7 +283,7 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
 
   Widget _buildVehicleCard(SecurityVehicleEntity v) {
     final color = v.isApproved ? Colors.green : Colors.redAccent;
-    final statusLabel = v.isApproved ? 'مقبول' : 'مرفوض';
+    final statusLabel = v.isApproved ? l.approvedLabel : l.rejectedLabel;
     final statusIcon = v.isApproved
         ? Icons.check_circle_outline
         : Icons.cancel_outlined;
@@ -310,6 +314,7 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                // الحالة - يسار
                 Row(
                   children: [
                     Icon(
@@ -328,6 +333,7 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
                     ),
                   ],
                 ),
+                // اسم السائق - يمين
                 Text(
                   v.driverName,
                   style: GoogleFonts.cairo(
@@ -345,30 +351,40 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                // رقم الدور + الوقت - يسار (في RTL)
                 Row(
                   children: [
-                    Text(
-                      '#${v.queuePosition}',
-                      style: GoogleFonts.cairo(
-                        color: AppColors.primary,
-                        fontSize: AppDimensions.fontSmall(context),
-                        fontWeight: FontWeight.bold,
+                    Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Text(
+                        '#${v.queuePosition}',
+                        style: GoogleFonts.cairo(
+                          color: AppColors.primary,
+                          fontSize: AppDimensions.fontSmall(context),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     SizedBox(width: AppDimensions.spacingSmall(context)),
-                    Text(
-                      v.entryTime,
-                      style: GoogleFonts.cairo(
-                        color: _isDark
-                            ? AppColors.textSecondary
-                            : Colors.black54,
-                        fontSize: AppDimensions.fontXSmall(context),
+                    Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Text(
+                        v.entryTime,
+                        style: GoogleFonts.cairo(
+                          color: _isDark
+                              ? AppColors.textSecondary
+                              : Colors.black54,
+                          fontSize: AppDimensions.fontXSmall(context),
+                        ),
                       ),
                     ),
                   ],
                 ),
+                // رقم اللوحة + المسار - يمين
                 Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: l.isArabic
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
                   children: [
                     Text(
                       v.vehiclePlate,
