@@ -1,9 +1,10 @@
+// features/shared/presentation/screens/change_password_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/localization/app_localizations.dart';
-import '../../../../core/utils/session_manager.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   final String idNumber;
@@ -21,58 +22,38 @@ class ChangePasswordScreen extends StatefulWidget {
 
 class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _oldPassCtrl = TextEditingController();
-  final _newPassCtrl = TextEditingController();
+  final _currentCtrl = TextEditingController();
+  final _newCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
 
-  bool _obscureOld = true;
+  bool _obscureCurrent = true;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
-  String _savedPassword = '';
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
-  AppLocalizations get l => AppLocalizations.of(context); // ← الترجمة
+  AppLocalizations get l => AppLocalizations.of(context);
 
   @override
-  void initState() {
-    super.initState();
-    _loadPassword();
-  }
-
-  Future<void> _loadPassword() async {
-    final session = await SessionManager.getSession();
-    if (session != null && mounted) {
-      setState(() {
-        _savedPassword = session['currentPassword'] ?? '';
-      });
-    }
+  void dispose() {
+    _currentCtrl.dispose();
+    _newCtrl.dispose();
+    _confirmCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _onSave() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+    setState(() => _isLoading = false);
 
-    try {
-      // ← عند ربط الـ API استبدل بـ:
-      // await http.post(
-      //   Uri.parse('$baseUrl/api/auth/change-password'),
-      //   headers: {'Authorization': 'Bearer $token'},
-      //   body: {
-      //     'id_number':    widget.idNumber,
-      //     'old_password': _oldPassCtrl.text.trim(),
-      //     'new_password': _newPassCtrl.text.trim(),
-      //   },
-      // );
-
-      await Future.delayed(const Duration(seconds: 1));
-      await SessionManager.updatePassword(_newPassCtrl.text.trim());
-
-      if (!mounted) return;
-
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
+    await showDialog(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: l.isArabic ? TextDirection.rtl : TextDirection.ltr,
+        child: AlertDialog(
           backgroundColor: Theme.of(context).colorScheme.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(
@@ -106,10 +87,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           actionsAlignment: MainAxisAlignment.center,
           actions: [
             ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                Navigator.pop(context, _newPassCtrl.text.trim());
-              },
+              onPressed: () => Navigator.pop(ctx),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 shape: RoundedRectangleBorder(
@@ -133,296 +111,172 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             ),
           ],
         ),
-      );
-    } catch (e) {
-      _showErrorDialog(l.unexpectedErr);
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            AppDimensions.cardRadius(context),
-          ),
-          side: const BorderSide(color: Colors.redAccent, width: 1),
-        ),
-        icon: Icon(
-          Icons.error_outline,
-          color: Colors.redAccent,
-          size: AppDimensions.iconXLarge(context),
-        ),
-        title: Text(
-          l.error,
-          textAlign: TextAlign.center,
-          style: GoogleFonts.cairo(
-            color: _isDark ? AppColors.textPrimary : Colors.black87,
-            fontWeight: FontWeight.bold,
-            fontSize: AppDimensions.fontLarge(context),
-          ),
-        ),
-        content: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: GoogleFonts.cairo(
-            color: _isDark ? AppColors.textSecondary : Colors.black54,
-            fontSize: AppDimensions.fontMedium(context),
-          ),
-        ),
-        actionsAlignment: MainAxisAlignment.center,
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(
-                  AppDimensions.cardRadius(context),
-                ),
-              ),
-              padding: EdgeInsets.symmetric(
-                horizontal: AppDimensions.spacingXLarge(context),
-                vertical: AppDimensions.spacingSmall(context),
-              ),
-            ),
-            child: Text(
-              l.ok,
-              style: GoogleFonts.cairo(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: AppDimensions.fontMedium(context),
-              ),
-            ),
-          ),
-        ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _oldPassCtrl.dispose();
-    _newPassCtrl.dispose();
-    _confirmCtrl.dispose();
-    super.dispose();
+    if (mounted) Navigator.pop(context, _newCtrl.text.trim());
   }
 
   @override
   Widget build(BuildContext context) {
-    final textAlign = l.isArabic ? TextAlign.right : TextAlign.left;
-    final textDir = l.isArabic ? TextDirection.rtl : TextDirection.ltr;
-    final crossAxis = l.isArabic
-        ? CrossAxisAlignment.end
-        : CrossAxisAlignment.start;
-
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        title: Text(
-          l.changePassword,
-          style: GoogleFonts.cairo(
+    final isRtl = l.isArabic;
+    return Directionality(
+      textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          centerTitle: true,
+          iconTheme: IconThemeData(
             color: _isDark ? AppColors.textPrimary : Colors.black87,
-            fontWeight: FontWeight.bold,
-            fontSize: AppDimensions.fontLarge(context),
+          ),
+          title: Text(
+            l.changePassword,
+            style: GoogleFonts.cairo(
+              color: _isDark ? AppColors.textPrimary : Colors.black87,
+              fontWeight: FontWeight.bold,
+              fontSize: AppDimensions.fontLarge(context),
+            ),
           ),
         ),
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(
-            l.isArabic ? Icons.arrow_back_ios : Icons.arrow_forward_ios,
-            color: _isDark ? AppColors.textPrimary : Colors.black87,
-            size: AppDimensions.iconMedium(context),
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(AppDimensions.spacingLarge(context)),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: crossAxis,
-            children: [
-              SizedBox(height: AppDimensions.spacingMedium(context)),
-              Center(
-                child: Container(
-                  width: AppDimensions.avatarLarge(context),
-                  height: AppDimensions.avatarLarge(context),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.primary.withOpacity(0.15),
-                    border: Border.all(
-                      color: AppColors.primary.withOpacity(0.4),
-                      width: 2,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.lock_reset,
-                    color: AppColors.primary,
-                    size: AppDimensions.iconXLarge(context),
-                  ),
+        body: SingleChildScrollView(
+          padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                SizedBox(height: AppDimensions.spacingMedium(context)),
+                _buildField(
+                  controller: _currentCtrl,
+                  label: l.currentPassword,
+                  hint: l.currentPassHint,
+                  obscure: _obscureCurrent,
+                  onToggle: () =>
+                      setState(() => _obscureCurrent = !_obscureCurrent),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return l.enterCurrentPass;
+                    if (v != widget.currentPassword) return l.wrongCurrentPass;
+                    return null;
+                  },
                 ),
-              ),
-              SizedBox(height: AppDimensions.spacingLarge(context)),
-
-              // ← كلمة المرور الحالية
-              _buildLabel(l.currentPassword),
-              SizedBox(height: AppDimensions.spacingSmall(context)),
-              TextFormField(
-                controller: _oldPassCtrl,
-                obscureText: _obscureOld,
-                textAlign: textAlign,
-                textDirection: textDir,
-                style: GoogleFonts.cairo(
-                  color: _isDark ? AppColors.textPrimary : Colors.black87,
-                  fontSize: AppDimensions.fontMedium(context),
+                SizedBox(height: AppDimensions.spacingMedium(context)),
+                _buildField(
+                  controller: _newCtrl,
+                  label: l.newPassword,
+                  hint: l.newPassHint,
+                  obscure: _obscureNew,
+                  onToggle: () => setState(() => _obscureNew = !_obscureNew),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return l.enterNewPass;
+                    if (v.length < 6) return l.passMin6;
+                    if (!RegExp(r'[!@#\$%^&*(),.?":{}|<>_\-]').hasMatch(v))
+                      return l.passSymbol;
+                    if (v == widget.currentPassword) return l.passSame;
+                    return null;
+                  },
                 ),
-                decoration: InputDecoration(
-                  hintText: l.currentPassHint,
-                  prefixIcon: const Icon(
-                    Icons.lock_outline,
-                    color: AppColors.primary,
-                  ),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureOld ? Icons.visibility_off : Icons.visibility,
-                      color: _isDark ? AppColors.textSecondary : Colors.black54,
-                      size: AppDimensions.iconMedium(context),
-                    ),
-                    onPressed: () => setState(() => _obscureOld = !_obscureOld),
-                  ),
+                SizedBox(height: AppDimensions.spacingMedium(context)),
+                _buildField(
+                  controller: _confirmCtrl,
+                  label: l.confirmPassword,
+                  hint: l.confirmPassHint,
+                  obscure: _obscureConfirm,
+                  onToggle: () =>
+                      setState(() => _obscureConfirm = !_obscureConfirm),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return l.confirmPass;
+                    if (v != _newCtrl.text) return l.passNoMatch;
+                    return null;
+                  },
                 ),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return l.enterCurrentPass;
-                  if (v != _savedPassword) return l.wrongCurrentPass;
-                  return null;
-                },
-              ),
-              SizedBox(height: AppDimensions.spacingMedium(context)),
-
-              // ← كلمة المرور الجديدة
-              _buildLabel(l.newPassword),
-              SizedBox(height: AppDimensions.spacingSmall(context)),
-              TextFormField(
-                controller: _newPassCtrl,
-                obscureText: _obscureNew,
-                textAlign: textAlign,
-                textDirection: textDir,
-                style: GoogleFonts.cairo(
-                  color: _isDark ? AppColors.textPrimary : Colors.black87,
-                  fontSize: AppDimensions.fontMedium(context),
-                ),
-                decoration: InputDecoration(
-                  hintText: l.newPassHint,
-                  prefixIcon: const Icon(
-                    Icons.lock_outline,
-                    color: AppColors.primary,
-                  ),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureNew ? Icons.visibility_off : Icons.visibility,
-                      color: _isDark ? AppColors.textSecondary : Colors.black54,
-                      size: AppDimensions.iconMedium(context),
-                    ),
-                    onPressed: () => setState(() => _obscureNew = !_obscureNew),
-                  ),
-                ),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return l.enterNewPass;
-                  if (v.length < 6) return l.passMin6;
-                  if (!RegExp(r'[!@#\$%^&*(),.?":{}|<>_\-]').hasMatch(v))
-                    return l.passSymbol;
-                  if (v == _savedPassword) return l.passSame;
-                  return null;
-                },
-              ),
-              SizedBox(height: AppDimensions.spacingMedium(context)),
-
-              // ← تأكيد كلمة المرور
-              _buildLabel(l.confirmPassword),
-              SizedBox(height: AppDimensions.spacingSmall(context)),
-              TextFormField(
-                controller: _confirmCtrl,
-                obscureText: _obscureConfirm,
-                textAlign: textAlign,
-                textDirection: textDir,
-                style: GoogleFonts.cairo(
-                  color: _isDark ? AppColors.textPrimary : Colors.black87,
-                  fontSize: AppDimensions.fontMedium(context),
-                ),
-                decoration: InputDecoration(
-                  hintText: l.confirmPassHint,
-                  prefixIcon: const Icon(
-                    Icons.lock_outline,
-                    color: AppColors.primary,
-                  ),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureConfirm ? Icons.visibility_off : Icons.visibility,
-                      color: _isDark ? AppColors.textSecondary : Colors.black54,
-                      size: AppDimensions.iconMedium(context),
-                    ),
-                    onPressed: () =>
-                        setState(() => _obscureConfirm = !_obscureConfirm),
-                  ),
-                ),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return l.confirmPass;
-                  if (v != _newPassCtrl.text) return l.passNoMatch;
-                  return null;
-                },
-              ),
-              SizedBox(height: AppDimensions.spacingXLarge(context)),
-
-              // ← زر الحفظ
-              SizedBox(
-                width: double.infinity,
-                height: AppDimensions.buttonHeight(context),
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _onSave,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppDimensions.cardRadius(context),
+                SizedBox(height: AppDimensions.spacingXLarge(context)),
+                SizedBox(
+                  width: double.infinity,
+                  height: AppDimensions.buttonHeight(context),
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _onSave,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.cardRadius(context),
+                        ),
                       ),
                     ),
-                  ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(
-                          color: AppColors.background,
-                        )
-                      : Text(
-                          l.save,
-                          style: GoogleFonts.cairo(
+                    child: _isLoading
+                        ? const CircularProgressIndicator(
                             color: AppColors.background,
-                            fontSize: AppDimensions.fontLarge(context),
-                            fontWeight: FontWeight.bold,
+                          )
+                        : Text(
+                            l.save,
+                            style: GoogleFonts.cairo(
+                              color: AppColors.background,
+                              fontSize: AppDimensions.fontLarge(context),
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      textAlign: l.isArabic ? TextAlign.right : TextAlign.left,
-      style: GoogleFonts.cairo(
-        color: _isDark ? AppColors.textSecondary : Colors.black54,
-        fontSize: AppDimensions.fontSmall(context),
-      ),
+  Widget _buildField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required bool obscure,
+    required VoidCallback onToggle,
+    required String? Function(String?) validator,
+  }) {
+    return Column(
+      crossAxisAlignment: l.isArabic
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.cairo(
+            color: _isDark ? AppColors.textSecondary : Colors.black54,
+            fontSize: AppDimensions.fontSmall(context),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        SizedBox(height: AppDimensions.spacingXSmall(context)),
+        TextFormField(
+          controller: controller,
+          obscureText: obscure,
+          textAlign: l.isArabic ? TextAlign.right : TextAlign.left,
+          textDirection: TextDirection.ltr, // كلمة المرور دائماً LTR
+          style: GoogleFonts.cairo(
+            color: _isDark ? AppColors.textPrimary : Colors.black87,
+            fontSize: AppDimensions.fontMedium(context),
+          ),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: GoogleFonts.cairo(
+              color: _isDark ? AppColors.textSecondary : Colors.black38,
+              fontSize: AppDimensions.fontSmall(context),
+            ),
+            prefixIcon: const Icon(
+              Icons.lock_outline,
+              color: AppColors.primary,
+            ),
+            suffixIcon: IconButton(
+              icon: Icon(
+                obscure ? Icons.visibility_off : Icons.visibility,
+                color: _isDark ? AppColors.textSecondary : Colors.black54,
+                size: AppDimensions.iconMedium(context),
+              ),
+              onPressed: onToggle,
+            ),
+          ),
+          validator: validator,
+        ),
+      ],
     );
   }
 }
