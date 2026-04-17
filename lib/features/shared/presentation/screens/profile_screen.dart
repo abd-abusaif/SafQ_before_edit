@@ -89,6 +89,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  /// تنسيق التاريخ بصيغة YYYY/MM/DD
+  String _formatDate(String dateStr) {
+    try {
+      final dt = DateTime.parse(dateStr);
+      return '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return dateStr;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -144,7 +154,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             label: l.phone1,
                             value: _driverInfo!.phone1,
                           ),
-                          // ← هاتف 2: إخفاء الحقل إذا لم تأتِ بيانات من الـ API
                           if (_driverInfo!.phone2 != null &&
                               _driverInfo!.phone2!.isNotEmpty)
                             _InfoItem(
@@ -256,7 +265,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             label: l.vehicleCode,
                             value: _vehicleInfo!.vehicleCode,
                           ),
-                          // ← الشاصي مرتين (تأكيد التكرار)
                           _InfoItem(
                             icon: Icons.numbers_outlined,
                             label: l.chassisNumber,
@@ -305,18 +313,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             value: _vehicleInfo!.insuranceExpiry,
                             isDate: true,
                           ),
-                          // ← حالة السماح بالتحميل
+                          // ★ تاريخ انتهاء السماح بالتحميل (بدلاً من مسموح/ممنوع)
                           _InfoItem(
-                            icon: _vehicleInfo!.loadingAllowed
-                                ? Icons.check_circle_outline
-                                : Icons.block,
-                            label: l.loadingAllowed,
-                            value: _vehicleInfo!.loadingAllowed
-                                ? l.loadingYes
-                                : l.loadingNo,
-                            customColor: _vehicleInfo!.loadingAllowed
-                                ? Colors.green
-                                : Colors.redAccent,
+                            icon: Icons.local_shipping_outlined,
+                            label: 'تاريخ انتهاء السماح بالتحميل',
+                            value: _vehicleInfo!.loadingAllowedUntil,
+                            isDate: true,
+                            isLoadingDate: true,
                           ),
                         ],
                       ),
@@ -356,6 +359,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         SizedBox(height: AppDimensions.spacingSmall(context)),
         Text(
           widget.driverName,
+          textAlign: TextAlign.center,
           style: GoogleFonts.cairo(
             color: _isDark ? AppColors.textPrimary : Colors.black87,
             fontSize: AppDimensions.fontLarge(context),
@@ -472,8 +476,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         border: Border.all(color: color.withOpacity(0.3), width: 1),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          // ── رأس البطاقة ───────────────────────
           Container(
             width: double.infinity,
             padding: EdgeInsets.symmetric(
@@ -487,38 +491,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 topRight: Radius.circular(AppDimensions.cardRadius(context)),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: l.isArabic
-                  ? MainAxisAlignment.end
-                  : MainAxisAlignment.start,
-              children: [
-                if (!l.isArabic) ...[
+            child: Directionality(
+              textDirection: l.isArabic ? TextDirection.rtl : TextDirection.ltr,
+              child: Row(
+                children: [
                   Icon(
                     icon,
                     color: color,
                     size: AppDimensions.iconMedium(context),
                   ),
                   SizedBox(width: AppDimensions.spacingSmall(context)),
-                ],
-                Text(
-                  title,
-                  style: GoogleFonts.cairo(
-                    color: color,
-                    fontSize: AppDimensions.fontMedium(context),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (l.isArabic) ...[
-                  SizedBox(width: AppDimensions.spacingSmall(context)),
-                  Icon(
-                    icon,
-                    color: color,
-                    size: AppDimensions.iconMedium(context),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: GoogleFonts.cairo(
+                        color: color,
+                        fontSize: AppDimensions.fontMedium(context),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
-              ],
+              ),
             ),
           ),
+          // ── محتوى البطاقة ─────────────────────
           Padding(
             padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
             child: Column(
@@ -529,7 +526,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildInfoRow(entry.value, color),
                     if (!isLast)
                       Divider(
-                        color: _isDark ? Colors.white38 : Colors.black12,
+                        color: _isDark ? Colors.white12 : Colors.black12,
                         height: 16,
                       ),
                   ],
@@ -542,18 +539,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  صف معلومات — تصميم ثابت ومتين
+  //  البنية (RTL): [أيقونة] [label] ............... [value] [شارة حالة]
+  // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildInfoRow(_InfoItem item, Color sectionColor) {
     bool isExpired = false;
     bool isNearExpiry = false;
+    int daysLeft = 0;
 
     if (item.isDate) {
       try {
         final date = DateTime.parse(item.value);
         final diff = date.difference(DateTime.now()).inDays;
+        daysLeft = diff;
         isExpired = diff < 0;
-        isNearExpiry = diff >= 0 && diff <= 15;
+        isNearExpiry = item.isLoadingDate
+            ? (diff >= 0 && diff <= 3)
+            : (diff >= 0 && diff <= 15);
       } catch (_) {}
     }
+
+    final displayValue = item.isDate ? _formatDate(item.value) : item.value;
 
     final valueColor =
         item.customColor ??
@@ -565,80 +572,120 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ? AppColors.textPrimary
             : Colors.black87);
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // القيمة
-        if (!l.isArabic)
-          _valueWidget(item.value, valueColor, isExpired, isNearExpiry),
+    return Directionality(
+      textDirection: l.isArabic ? TextDirection.rtl : TextDirection.ltr,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // الأيقونة
+          Icon(
+            item.icon,
+            color: sectionColor.withOpacity(0.7),
+            size: AppDimensions.iconSmall(context),
+          ),
+          SizedBox(width: AppDimensions.spacingSmall(context)),
 
-        // Label + أيقونة
-        Row(
-          children: [
-            if (l.isArabic) ...[
-              Text(
-                item.label,
-                style: GoogleFonts.cairo(
-                  color: _isDark ? AppColors.textSecondary : Colors.black54,
-                  fontSize: AppDimensions.fontXSmall(context),
-                ),
+          // الـ label
+          Expanded(
+            flex: 2,
+            child: Text(
+              item.label,
+              style: GoogleFonts.cairo(
+                color: _isDark ? AppColors.textSecondary : Colors.black54,
+                fontSize: AppDimensions.fontXSmall(context),
               ),
-              SizedBox(width: AppDimensions.spacingSmall(context)),
-              Icon(
-                item.icon,
-                color: sectionColor.withOpacity(0.7),
-                size: AppDimensions.iconSmall(context),
-              ),
-            ] else ...[
-              Icon(
-                item.icon,
-                color: sectionColor.withOpacity(0.7),
-                size: AppDimensions.iconSmall(context),
-              ),
-              SizedBox(width: AppDimensions.spacingSmall(context)),
-              Text(
-                item.label,
-                style: GoogleFonts.cairo(
-                  color: _isDark ? AppColors.textSecondary : Colors.black54,
-                  fontSize: AppDimensions.fontXSmall(context),
-                ),
-              ),
-            ],
-          ],
-        ),
+            ),
+          ),
+          SizedBox(width: AppDimensions.spacingSmall(context)),
 
-        // القيمة (عربي)
-        if (l.isArabic)
-          _valueWidget(item.value, valueColor, isExpired, isNearExpiry),
-      ],
+          // القيمة
+          Expanded(
+            flex: 3,
+            child: _buildValueContent(
+              displayValue: displayValue,
+              item: item,
+              valueColor: valueColor,
+              isExpired: isExpired,
+              isNearExpiry: isNearExpiry,
+              daysLeft: daysLeft,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _valueWidget(
-    String value,
-    Color color,
-    bool isExpired,
-    bool isNearExpiry,
-  ) {
-    return Row(
-      children: [
-        if ((isExpired || isNearExpiry)) ...[
-          Icon(
-            Icons.warning_amber_rounded,
-            color: isExpired ? Colors.redAccent : Colors.orange,
-            size: AppDimensions.iconSmall(context),
+  Widget _buildValueContent({
+    required String displayValue,
+    required _InfoItem item,
+    required Color valueColor,
+    required bool isExpired,
+    required bool isNearExpiry,
+    required int daysLeft,
+  }) {
+    // حقل تاريخ التحميل: تاريخ + شارة حالة
+    if (item.isLoadingDate) {
+      final badgeColor = isExpired
+          ? Colors.redAccent
+          : isNearExpiry
+          ? Colors.orange
+          : Colors.green;
+
+      final badgeText = isExpired
+          ? l.expiredLabel
+          : 'متبقي ${daysLeft.abs()} ${l.dayLabel}';
+
+      return Column(
+        crossAxisAlignment: l.isArabic
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            displayValue,
+            textAlign: l.isArabic ? TextAlign.end : TextAlign.start,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.cairo(
+              color: badgeColor,
+              fontSize: AppDimensions.fontSmall(context),
+              fontWeight: FontWeight.w700,
+            ),
           ),
-          SizedBox(width: AppDimensions.spacingXSmall(context)),
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: badgeColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: badgeColor.withOpacity(0.5),
+                width: 0.8,
+              ),
+            ),
+            child: Text(
+              badgeText,
+              style: GoogleFonts.cairo(
+                color: badgeColor,
+                fontSize: AppDimensions.fontXSmall(context) * 0.9,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
         ],
-        Text(
-          value,
-          style: GoogleFonts.cairo(
-            color: color,
-            fontSize: AppDimensions.fontMedium(context),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
+      );
+    }
+
+    // باقي الحقول — نص عادي
+    return Text(
+      displayValue,
+      textAlign: l.isArabic ? TextAlign.end : TextAlign.start,
+      overflow: TextOverflow.ellipsis,
+      maxLines: 2,
+      style: GoogleFonts.cairo(
+        color: valueColor,
+        fontSize: AppDimensions.fontSmall(context),
+        fontWeight: FontWeight.w600,
+      ),
     );
   }
 }
@@ -648,6 +695,7 @@ class _InfoItem {
   final String label;
   final String value;
   final bool isDate;
+  final bool isLoadingDate;
   final Color? customColor;
 
   const _InfoItem({
@@ -655,6 +703,7 @@ class _InfoItem {
     required this.label,
     required this.value,
     this.isDate = false,
+    this.isLoadingDate = false,
     this.customColor,
   });
 }

@@ -47,23 +47,50 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final vehicles = await _repo.getVehicles(widget.idNumber);
-      setState(() => _vehicles = vehicles);
-      for (final v in vehicles) {
+      if (!mounted) return;
+
+      // إلغاء المؤقتات السابقة قبل إعادة البناء (لتفادي تسرّب المؤقتات
+      // أو تشغيل أكثر من مؤقت لنفس المركبة عند السحب للتحديث)
+      for (final t in _approvedTimers.values) {
+        t.cancel();
+      }
+      _approvedTimers.clear();
+
+      // تصفية المركبات المنتهية مسبقاً (مضى عليها أكثر من المهلة)
+      // قبل تعيينها للـ state حتى لا نضطر للحذف أثناء التكرار.
+      final now = DateTime.now();
+      const maxAge = Duration(minutes: 1);
+      final activeVehicles = vehicles.where((v) {
+        if (!v.isApproved) return true;
+        return now.difference(v.entryDateTime) < maxAge;
+      }).toList();
+
+      setState(() => _vehicles = activeVehicles);
+
+      // نُشغّل المؤقتات بعد setState، ونتكرر على نسخة مستقلة
+      // (activeVehicles) لا على _vehicles نفسها — هذا يحمي من
+      // ConcurrentModificationError حتى لو تم الحذف لاحقاً.
+      for (final v in activeVehicles) {
         if (v.isApproved) _startApprovedTimer(v);
       }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   void _startApprovedTimer(SecurityVehicleEntity vehicle) {
     final elapsed = DateTime.now().difference(vehicle.entryDateTime);
     final remaining = const Duration(minutes: 1) - elapsed;
-    if (remaining.isNegative) {
-      _removeVehicle(vehicle.id);
+    // في حال لم يتبقّ وقت: نؤجّل الحذف للـ frame التالي حتى لا
+    // نعدّل القائمة أثناء تكرار المتصل علينا.
+    if (remaining.isNegative || remaining == Duration.zero) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _removeVehicle(vehicle.id);
+      });
       return;
     }
     _approvedTimers[vehicle.id] = Timer(remaining, () {
@@ -72,12 +99,11 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
   }
 
   void _removeVehicle(String vehicleId) {
-    if (mounted) {
-      setState(() {
-        _vehicles.removeWhere((v) => v.id == vehicleId);
-        _approvedTimers.remove(vehicleId);
-      });
-    }
+    if (!mounted) return;
+    _approvedTimers.remove(vehicleId)?.cancel();
+    setState(() {
+      _vehicles.removeWhere((v) => v.id == vehicleId);
+    });
   }
 
   String _getInitials(String name) {

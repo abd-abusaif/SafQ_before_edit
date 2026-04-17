@@ -41,68 +41,79 @@ class QueueItemWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final positionColor = _getPositionColor(entry.queuePosition);
+    // ignore: unused_local_variable
     final l = AppLocalizations.of(context);
 
-    return Container(
-      margin: EdgeInsets.symmetric(
-        vertical: AppDimensions.spacingXSmall(context),
-      ),
-      padding: EdgeInsets.symmetric(
-        horizontal: AppDimensions.spacingMedium(context),
-        vertical: AppDimensions.spacingMedium(context),
-      ),
-      decoration: BoxDecoration(
-        color: isCurrentDriver
-            ? AppColors.primary.withOpacity(0.15)
-            : Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppDimensions.cardRadius(context)),
-        border: Border.all(
-          color: isCurrentDriver
-              ? AppColors.primary
-              : isDark
-              ? Colors.white12
-              : Colors.black12,
-          width: isCurrentDriver ? 1.5 : 0.5,
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Container(
+        margin: EdgeInsets.symmetric(
+          vertical: AppDimensions.spacingXSmall(context),
         ),
-      ),
-      child: Row(
-        children: [
-          // ← رقم الدور
-          Text(
-            '${entry.queuePosition}',
-            style: GoogleFonts.cairo(
-              color: positionColor,
-              fontSize: AppDimensions.fontXLarge(context),
-              fontWeight: FontWeight.bold,
-            ),
+        padding: EdgeInsets.symmetric(
+          horizontal: AppDimensions.spacingMedium(context),
+          vertical: AppDimensions.spacingMedium(context),
+        ),
+        decoration: BoxDecoration(
+          color: isCurrentDriver
+              ? AppColors.primary.withOpacity(0.15)
+              : Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(
+            AppDimensions.cardRadius(context),
           ),
-          SizedBox(width: AppDimensions.spacingMedium(context)),
-
-          // ← رقم المركبة (بدلاً من اسم الخط)
-          Expanded(
-            child: Text(
-              entry.vehicleNumber,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.cairo(
-                color: isDark ? AppColors.textPrimary : Colors.black87,
-                fontSize: AppDimensions.fontMedium(context),
-                fontWeight: isCurrentDriver
-                    ? FontWeight.bold
-                    : FontWeight.normal,
+          border: Border.all(
+            color: isCurrentDriver
+                ? AppColors.primary
+                : isDark
+                ? Colors.white12
+                : Colors.black12,
+            width: isCurrentDriver ? 1.5 : 0.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            // ← رقم الدور (يمين في RTL)
+            SizedBox(
+              width: 40,
+              child: Text(
+                '${entry.queuePosition}',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.cairo(
+                  color: positionColor,
+                  fontSize: AppDimensions.fontXLarge(context),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ),
-          SizedBox(width: AppDimensions.spacingMedium(context)),
+            SizedBox(width: AppDimensions.spacingMedium(context)),
 
-          // ← وقت دخول المركبة فقط (عند تسجيلها بـ RFID)
-          Text(
-            entry.entryTime,
-            style: GoogleFonts.cairo(
-              color: isDark ? AppColors.textSecondary : Colors.black54,
-              fontSize: AppDimensions.fontXSmall(context),
+            // ← رقم المركبة (وسط)
+            Expanded(
+              child: Text(
+                entry.vehicleNumber,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.cairo(
+                  color: isDark ? AppColors.textPrimary : Colors.black87,
+                  fontSize: AppDimensions.fontMedium(context),
+                  fontWeight: isCurrentDriver
+                      ? FontWeight.bold
+                      : FontWeight.normal,
+                ),
+              ),
             ),
-          ),
-        ],
+            SizedBox(width: AppDimensions.spacingMedium(context)),
+
+            // ← وقت دخول المركبة (يسار في RTL)
+            Text(
+              entry.entryTime,
+              textAlign: TextAlign.left,
+              style: GoogleFonts.cairo(
+                color: isDark ? AppColors.textSecondary : Colors.black54,
+                fontSize: AppDimensions.fontXSmall(context),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
