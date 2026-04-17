@@ -260,7 +260,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   }
 
   // ═══════════════════════════════════════════════
-  //  الهيدر
+  // الهيدر
   // ═══════════════════════════════════════════════
   Widget _buildHeader() {
     final firstName =
@@ -321,9 +321,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   }
 
   // ═══════════════════════════════════════════════
-  //  بطاقة الدور الرئيسية
-  //  - رقم الدور يتلوّن أخضر إذا ضمن الخانات المسموحة
-  //  - وقت الدخول من RFID
+  // بطاقة الدور الرئيسية
+  // - رقم الدور يتلوّن أخضر إذا ضمن الخانات المسموحة
+  // - وقت الدخول من RFID
   // ═══════════════════════════════════════════════
   Widget _buildInfoCard() {
     final positionColor = _isInAllowedSlot ? Colors.green : AppColors.primary;
@@ -402,7 +402,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   }
 
   // ═══════════════════════════════════════════════
-  //  بانر تاريخ التحميل المسموح
+  // بانر تاريخ التحميل المسموح
   // ═══════════════════════════════════════════════
   Widget _buildLoadingValidityBanner() {
     final validity = _myEntry!.loadingValidityDate!;
@@ -472,10 +472,10 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   }
 
   // ═══════════════════════════════════════════════
-  //  ★ تنبيهات الرخص — تصميم جديد أنيق
-  //  - بطاقة موحّدة بعنوان "حالة الرخص"
-  //  - كل رخصة في صف: أيقونة + اسم + شارة حالة (منتهية / متبقي X يوم)
-  //  - محاذاة RTL مرتّبة ومتناسقة
+  // تنبيهات الرخص — تصميم جديد أنيق
+  // - بطاقة موحّدة بعنوان "حالة الرخص"
+  // - كل رخصة في صف: أيقونة + اسم + شارة حالة (منتهية / متبقي X يوم)
+  // - محاذاة RTL مرتّبة ومتناسقة
   // ═══════════════════════════════════════════════
   Widget _buildLicenseWarnings() {
     if (_vehicleInfo == null && _driverInfo == null) {
@@ -677,7 +677,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   }
 
   // ═══════════════════════════════════════════════
-  //  بانر حظر تسجيل الدور
+  // بانر حظر تسجيل الدور
   // ═══════════════════════════════════════════════
   Widget _buildRegisterBlockedBanner() {
     return Container(
@@ -707,7 +707,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   }
 
   // ═══════════════════════════════════════════════
-  //  تنبيه المخالفة
+  // تنبيه المخالفة
   // ═══════════════════════════════════════════════
   Widget _buildViolationWarning() {
     return Container(
@@ -751,7 +751,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   }
 
   // ═══════════════════════════════════════════════
-  //  بطاقة الرفض
+  // بطاقة الرفض
   // ═══════════════════════════════════════════════
   Widget _buildRejectedCard() {
     return Container(
