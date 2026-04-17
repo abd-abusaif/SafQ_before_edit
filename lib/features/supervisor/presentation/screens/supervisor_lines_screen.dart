@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../data/repositories/supervisor_repository_impl.dart';
 import '../../domain/entities/supervisor_entity.dart';
 import '../../domain/entities/line_detail_entity.dart';
@@ -21,7 +22,9 @@ class _SupervisorLinesScreenState extends State<SupervisorLinesScreen> {
   final _repo = SupervisorRepositoryImpl();
   List<SupervisorLineEntity> _lines = [];
   bool _isLoading = true;
+
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  AppLocalizations get l => AppLocalizations.of(context);
 
   @override
   void initState() {
@@ -41,48 +44,51 @@ class _SupervisorLinesScreenState extends State<SupervisorLinesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        automaticallyImplyLeading: false,
-        centerTitle: true,
-        title: Text(
-          'خطوطي 🚌',
-          style: GoogleFonts.cairo(
-            color: _isDark ? AppColors.textPrimary : Colors.black87,
-            fontWeight: FontWeight.bold,
-            fontSize: AppDimensions.fontLarge(context),
+    return Directionality(
+      textDirection: l.isArabic ? TextDirection.rtl : TextDirection.ltr,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          automaticallyImplyLeading: false,
+          centerTitle: true,
+          title: Text(
+            l.translate('my_lines_title'),
+            style: GoogleFonts.cairo(
+              color: _isDark ? AppColors.textPrimary : Colors.black87,
+              fontWeight: FontWeight.bold,
+              fontSize: AppDimensions.fontLarge(context),
+            ),
           ),
         ),
-      ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            )
-          : RefreshIndicator(
-              color: AppColors.primary,
-              onRefresh: _load,
-              child: _lines.isEmpty
-                  ? Center(
-                      child: Text(
-                        'لا توجد خطوط مسؤول عنها',
-                        style: GoogleFonts.cairo(
-                          color: _isDark
-                              ? AppColors.textSecondary
-                              : Colors.black54,
-                          fontSize: AppDimensions.fontMedium(context),
+        body: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              )
+            : RefreshIndicator(
+                color: AppColors.primary,
+                onRefresh: _load,
+                child: _lines.isEmpty
+                    ? Center(
+                        child: Text(
+                          l.translate('no_assigned_lines'),
+                          style: GoogleFonts.cairo(
+                            color: _isDark
+                                ? AppColors.textSecondary
+                                : Colors.black54,
+                            fontSize: AppDimensions.fontMedium(context),
+                          ),
                         ),
+                      )
+                    : ListView.builder(
+                        padding: EdgeInsets.all(
+                          AppDimensions.spacingMedium(context),
+                        ),
+                        itemCount: _lines.length,
+                        itemBuilder: (_, i) => _buildLineCard(_lines[i], i),
                       ),
-                    )
-                  : ListView.builder(
-                      padding: EdgeInsets.all(
-                        AppDimensions.spacingMedium(context),
-                      ),
-                      itemCount: _lines.length,
-                      itemBuilder: (_, i) => _buildLineCard(_lines[i], i),
-                    ),
-            ),
+              ),
+      ),
     );
   }
 
@@ -119,15 +125,19 @@ class _SupervisorLinesScreenState extends State<SupervisorLinesScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            // سهم التنقل - يسار في RTL
             Icon(
-              Icons.arrow_back_ios_new,
+              l.isArabic ? Icons.arrow_back_ios_new : Icons.arrow_forward_ios,
               color: color.withOpacity(0.5),
               size: AppDimensions.iconSmall(context),
             ),
+            // معلومات الخط + أيقونة - يمين في RTL
             Row(
               children: [
                 Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: l.isArabic
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
                   children: [
                     Text(
                       line.name,
@@ -137,13 +147,16 @@ class _SupervisorLinesScreenState extends State<SupervisorLinesScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Text(
-                      'الخط رقم ${line.id}',
-                      style: GoogleFonts.cairo(
-                        color: _isDark
-                            ? AppColors.textSecondary
-                            : Colors.black54,
-                        fontSize: AppDimensions.fontXSmall(context),
+                    Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Text(
+                        '${l.translate('line_prefix')} ${line.id}',
+                        style: GoogleFonts.cairo(
+                          color: _isDark
+                              ? AppColors.textSecondary
+                              : Colors.black54,
+                          fontSize: AppDimensions.fontXSmall(context),
+                        ),
                       ),
                     ),
                   ],
@@ -195,7 +208,9 @@ class _LineDetailScreenState extends State<LineDetailScreen> {
   final _repo = SupervisorRepositoryImpl();
   LineDetailEntity? _detail;
   bool _isLoading = true;
+
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  AppLocalizations get l => AppLocalizations.of(context);
 
   @override
   void initState() {
@@ -215,76 +230,82 @@ class _LineDetailScreenState extends State<LineDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        centerTitle: true,
-        iconTheme: IconThemeData(
-          color: _isDark ? AppColors.textPrimary : Colors.black87,
-        ),
-        title: Text(
-          widget.lineName,
-          style: GoogleFonts.cairo(
+    return Directionality(
+      textDirection: l.isArabic ? TextDirection.rtl : TextDirection.ltr,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          centerTitle: true,
+          iconTheme: IconThemeData(
             color: _isDark ? AppColors.textPrimary : Colors.black87,
-            fontWeight: FontWeight.bold,
-            fontSize: AppDimensions.fontLarge(context),
+          ),
+          title: Text(
+            widget.lineName,
+            style: GoogleFonts.cairo(
+              color: _isDark ? AppColors.textPrimary : Colors.black87,
+              fontWeight: FontWeight.bold,
+              fontSize: AppDimensions.fontLarge(context),
+            ),
           ),
         ),
-      ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            )
-          : RefreshIndicator(
-              color: AppColors.primary,
-              onRefresh: _load,
-              child: ListView(
-                padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
-                children: [
-                  _buildFareCard(),
-                  SizedBox(height: AppDimensions.spacingMedium(context)),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppDimensions.spacingSmall(context),
-                          vertical: AppDimensions.spacingXSmall(context),
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: AppColors.primary.withOpacity(0.3),
+        body: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              )
+            : RefreshIndicator(
+                color: AppColors.primary,
+                onRefresh: _load,
+                child: ListView(
+                  padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
+                  children: [
+                    _buildFareCard(),
+                    SizedBox(height: AppDimensions.spacingMedium(context)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppDimensions.spacingSmall(context),
+                            vertical: AppDimensions.spacingXSmall(context),
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: AppColors.primary.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Directionality(
+                            textDirection: TextDirection.ltr,
+                            child: Text(
+                              '${_detail?.vehicles.length ?? 0} ${l.translate('vehicles_count')}',
+                              style: GoogleFonts.cairo(
+                                color: AppColors.primary,
+                                fontSize: AppDimensions.fontXSmall(context),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
-                        child: Text(
-                          '${_detail?.vehicles.length ?? 0} مركبة',
+                        Text(
+                          l.translate('registered_vehicles'),
                           style: GoogleFonts.cairo(
-                            color: AppColors.primary,
-                            fontSize: AppDimensions.fontXSmall(context),
+                            color: _isDark
+                                ? AppColors.textPrimary
+                                : Colors.black87,
+                            fontSize: AppDimensions.fontMedium(context),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
-                      Text(
-                        'المركبات المسجّلة',
-                        style: GoogleFonts.cairo(
-                          color: _isDark
-                              ? AppColors.textPrimary
-                              : Colors.black87,
-                          fontSize: AppDimensions.fontMedium(context),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: AppDimensions.spacingSmall(context)),
-                  ...(_detail?.vehicles.map(_buildVehicleCard) ?? []),
-                ],
+                      ],
+                    ),
+                    SizedBox(height: AppDimensions.spacingSmall(context)),
+                    ...(_detail?.vehicles.map(_buildVehicleCard) ?? []),
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 
@@ -299,6 +320,7 @@ class _LineDetailScreenState extends State<LineDetailScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // القيمة - يسار
           Container(
             padding: EdgeInsets.symmetric(
               horizontal: AppDimensions.spacingMedium(context),
@@ -308,19 +330,23 @@ class _LineDetailScreenState extends State<LineDetailScreen> {
               color: AppColors.primary.withOpacity(0.15),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Text(
-              _detail?.passengerFare ?? '--',
-              style: GoogleFonts.cairo(
-                color: AppColors.primary,
-                fontSize: AppDimensions.fontXLarge(context),
-                fontWeight: FontWeight.bold,
+            child: Directionality(
+              textDirection: TextDirection.ltr,
+              child: Text(
+                _detail?.passengerFare ?? '--',
+                style: GoogleFonts.cairo(
+                  color: AppColors.primary,
+                  fontSize: AppDimensions.fontXLarge(context),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
+          // التسمية - يمين
           Row(
             children: [
               Text(
-                'أجرة الراكب',
+                l.translate('passenger_fare_label'),
                 style: GoogleFonts.cairo(
                   color: _isDark ? AppColors.textPrimary : Colors.black87,
                   fontSize: AppDimensions.fontMedium(context),
@@ -360,14 +386,16 @@ class _LineDetailScreenState extends State<LineDetailScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Icon(
-              Icons.chevron_left,
+              l.isArabic ? Icons.chevron_left : Icons.chevron_right,
               color: const Color(0xFF4FC3F7).withOpacity(0.5),
               size: AppDimensions.iconSmall(context),
             ),
             Row(
               children: [
                 Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: l.isArabic
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
                   children: [
                     Text(
                       v.driverName,
@@ -424,83 +452,104 @@ class _LineDetailScreenState extends State<LineDetailScreen> {
           top: Radius.circular(AppDimensions.cardRadius(context) * 1.5),
         ),
       ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: EdgeInsets.only(
-                bottom: AppDimensions.spacingMedium(context),
+      builder: (ctx) => Directionality(
+        textDirection: l.isArabic ? TextDirection.rtl : TextDirection.ltr,
+        child: Padding(
+          padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: EdgeInsets.only(
+                  bottom: AppDimensions.spacingMedium(context),
+                ),
+                decoration: BoxDecoration(
+                  color: _isDark ? Colors.white24 : Colors.black26,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-              decoration: BoxDecoration(
-                color: _isDark ? Colors.white24 : Colors.black26,
-                borderRadius: BorderRadius.circular(2),
+              Text(
+                l.translate('vehicle_details'),
+                style: GoogleFonts.cairo(
+                  color: _isDark ? AppColors.textPrimary : Colors.black87,
+                  fontSize: AppDimensions.fontLarge(context),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            Text(
-              'تفاصيل المركبة',
-              style: GoogleFonts.cairo(
-                color: _isDark ? AppColors.textPrimary : Colors.black87,
-                fontSize: AppDimensions.fontLarge(context),
-                fontWeight: FontWeight.bold,
+              SizedBox(height: AppDimensions.spacingMedium(context)),
+              _detailRow(
+                Icons.directions_car_outlined,
+                l.vehiclePlate,
+                v.vehiclePlate,
               ),
-            ),
-            SizedBox(height: AppDimensions.spacingMedium(context)),
-            _detailRow(
-              Icons.directions_car_outlined,
-              'رقم المركبة',
-              v.vehiclePlate,
-            ),
-            _detailDivider(),
-            _detailRow(
-              Icons.badge_outlined,
-              'رخصة التشغيل',
-              v.operatingLicense,
-            ),
-            _detailDivider(),
-            _detailRow(Icons.person_outline, 'اسم السائق', v.driverName),
-            _detailDivider(),
-            _detailRow(Icons.fingerprint, 'هوية السائق', v.driverIdNumber),
-            _detailDivider(),
-            _detailRow(Icons.phone_outlined, 'رقم الهاتف', v.driverPhone),
-            SizedBox(height: AppDimensions.spacingLarge(context)),
-          ],
+              _detailDivider(),
+              _detailRow(
+                Icons.badge_outlined,
+                l.translate('operating_license_label'),
+                v.operatingLicense,
+              ),
+              _detailDivider(),
+              _detailRow(Icons.person_outline, l.fullName, v.driverName),
+              _detailDivider(),
+              _detailRow(
+                Icons.fingerprint,
+                l.translate('driver_id_label'),
+                v.driverIdNumber,
+              ),
+              _detailDivider(),
+              _detailRow(
+                Icons.phone_outlined,
+                l.translate('driver_phone_label'),
+                v.driverPhone,
+              ),
+              SizedBox(height: AppDimensions.spacingLarge(context)),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _detailRow(IconData icon, String label, String value) {
+    final isNumeric = RegExp(r'^[\d\s\+\-\.]+$').hasMatch(value.trim());
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          value,
-          style: GoogleFonts.cairo(
-            color: _isDark ? AppColors.textPrimary : Colors.black87,
-            fontSize: AppDimensions.fontMedium(context),
-            fontWeight: FontWeight.w600,
+        Icon(
+          icon,
+          color: AppColors.primary.withOpacity(0.7),
+          size: AppDimensions.iconSmall(context),
+        ),
+        SizedBox(width: AppDimensions.spacingXSmall(context)),
+        Expanded(
+          flex: 2,
+          child: Text(
+            label,
+            style: GoogleFonts.cairo(
+              color: _isDark ? AppColors.textSecondary : Colors.black54,
+              fontSize: AppDimensions.fontXSmall(context),
+            ),
           ),
         ),
-        Row(
-          children: [
-            Text(
-              label,
+        Expanded(
+          flex: 3,
+          child: Directionality(
+            textDirection: isNumeric
+                ? TextDirection.ltr
+                : (l.isArabic ? TextDirection.rtl : TextDirection.ltr),
+            child: Text(
+              value,
+              textAlign: isNumeric
+                  ? (l.isArabic ? TextAlign.right : TextAlign.left)
+                  : (l.isArabic ? TextAlign.end : TextAlign.start),
               style: GoogleFonts.cairo(
-                color: _isDark ? AppColors.textSecondary : Colors.black54,
-                fontSize: AppDimensions.fontXSmall(context),
+                color: _isDark ? AppColors.textPrimary : Colors.black87,
+                fontSize: AppDimensions.fontMedium(context),
+                fontWeight: FontWeight.w600,
               ),
             ),
-            SizedBox(width: AppDimensions.spacingXSmall(context)),
-            Icon(
-              icon,
-              color: AppColors.primary.withOpacity(0.7),
-              size: AppDimensions.iconSmall(context),
-            ),
-          ],
+          ),
         ),
       ],
     );

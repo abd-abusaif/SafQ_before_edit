@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/session_manager.dart';
 import 'supervisor_home_screen.dart';
 import 'supervisor_notifications_screen.dart';
@@ -29,6 +30,7 @@ class SupervisorMainNavigation extends StatefulWidget {
 class _SupervisorMainNavigationState extends State<SupervisorMainNavigation> {
   int _currentIndex = 0;
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  AppLocalizations get l => AppLocalizations.of(context);
 
   late final List<Widget> _screens;
 
@@ -53,100 +55,114 @@ class _SupervisorMainNavigationState extends State<SupervisorMainNavigation> {
   void _onLogout() {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            AppDimensions.cardRadius(context),
+      builder: (ctx) => Directionality(
+        textDirection: l.isArabic ? TextDirection.rtl : TextDirection.ltr,
+        child: AlertDialog(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(
+              AppDimensions.cardRadius(context),
+            ),
+            side: const BorderSide(color: Colors.redAccent, width: 1),
           ),
-          side: const BorderSide(color: Colors.redAccent, width: 1),
-        ),
-        icon: Icon(
-          Icons.logout,
-          color: Colors.redAccent,
-          size: AppDimensions.iconXLarge(context),
-        ),
-        title: Text(
-          'تسجيل الخروج',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.cairo(
-            color: _isDark ? AppColors.textPrimary : Colors.black87,
-            fontWeight: FontWeight.bold,
-            fontSize: AppDimensions.fontLarge(context),
+          icon: Icon(
+            Icons.logout,
+            color: Colors.redAccent,
+            size: AppDimensions.iconXLarge(context),
           ),
-        ),
-        content: Text(
-          'هل تريد تسجيل الخروج؟',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.cairo(
-            color: _isDark ? AppColors.textSecondary : Colors.black54,
-            fontSize: AppDimensions.fontMedium(context),
-          ),
-        ),
-        actionsAlignment: MainAxisAlignment.spaceEvenly,
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'إلغاء',
-              style: GoogleFonts.cairo(
-                color: _isDark ? AppColors.textSecondary : Colors.black54,
-              ),
+          title: Text(
+            l.logout,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.cairo(
+              color: _isDark ? AppColors.textPrimary : Colors.black87,
+              fontWeight: FontWeight.bold,
+              fontSize: AppDimensions.fontLarge(context),
             ),
           ),
-          ElevatedButton(
-            onPressed: () async {
-              await SessionManager.clearSession();
-              if (!ctx.mounted) return;
-              Navigator.pop(ctx);
-              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(
-                  AppDimensions.cardRadius(context),
+          content: Text(
+            l.logoutQuestion,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.cairo(
+              color: _isDark ? AppColors.textSecondary : Colors.black54,
+              fontSize: AppDimensions.fontMedium(context),
+            ),
+          ),
+          actionsAlignment: MainAxisAlignment.spaceEvenly,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                l.cancel,
+                style: GoogleFonts.cairo(
+                  color: _isDark ? AppColors.textSecondary : Colors.black54,
                 ),
               ),
             ),
-            child: Text('خروج', style: GoogleFonts.cairo(color: Colors.white)),
-          ),
-        ],
+            ElevatedButton(
+              onPressed: () async {
+                await SessionManager.clearSession();
+                if (!ctx.mounted) return;
+                Navigator.pop(ctx);
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/',
+                  (route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    AppDimensions.cardRadius(context),
+                  ),
+                ),
+              ),
+              child: Text(
+                l.logout,
+                style: GoogleFonts.cairo(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: IndexedStack(index: _currentIndex, children: _screens),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          border: Border(
-            top: BorderSide(
-              color: _isDark ? Colors.white12 : Colors.black12,
-              width: 0.5,
+    return Directionality(
+      textDirection: l.isArabic ? TextDirection.rtl : TextDirection.ltr,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: IndexedStack(index: _currentIndex, children: _screens),
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            border: Border(
+              top: BorderSide(
+                color: _isDark ? Colors.white12 : Colors.black12,
+                width: 0.5,
+              ),
             ),
           ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: AppDimensions.spacingSmall(context),
-              vertical: AppDimensions.spacingSmall(context),
-            ),
-            child: Directionality(
-              textDirection: TextDirection.rtl,
+          child: SafeArea(
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppDimensions.spacingSmall(context),
+                vertical: AppDimensions.spacingSmall(context),
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _navItem(0, Icons.home_rounded, 'الرئيسية'),
-                  _navItem(1, Icons.notifications_outlined, 'الإشعارات'),
-                  _navItem(2, Icons.person_outline, 'حسابي'),
-                  _navItem(3, Icons.lock_clock_outlined, 'الأذونات'),
-                  _navItemEmoji(4, '🚌', 'خطوطي'),
+                  _navItem(0, Icons.home_rounded, l.home),
+                  _navItem(1, Icons.notifications_outlined, l.notifications),
+                  _navItem(2, Icons.person_outline, l.translate('my_account')),
+                  _navItem(3, Icons.lock_clock_outlined, l.permissions),
+                  _navItem(
+                    4,
+                    Icons.directions_bus_outlined,
+                    l.translate('my_lines'),
+                  ),
                   _logoutItem(),
                 ],
               ),
@@ -204,50 +220,6 @@ class _SupervisorMainNavigationState extends State<SupervisorMainNavigation> {
     );
   }
 
-  Widget _navItemEmoji(int index, String emoji, String label) {
-    final selected = _currentIndex == index;
-    return GestureDetector(
-      onTap: () => setState(() => _currentIndex = index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(
-          horizontal: AppDimensions.spacingSmall(context),
-          vertical: AppDimensions.spacingSmall(context),
-        ),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(
-            AppDimensions.cardRadius(context),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              emoji,
-              style: TextStyle(
-                fontSize: AppDimensions.iconMedium(context) * 0.85,
-              ),
-            ),
-            SizedBox(height: AppDimensions.spacingXSmall(context)),
-            Text(
-              label,
-              style: GoogleFonts.cairo(
-                color: selected
-                    ? AppColors.background
-                    : _isDark
-                    ? AppColors.textSecondary
-                    : Colors.black54,
-                fontSize: AppDimensions.fontXSmall(context),
-                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _logoutItem() {
     return GestureDetector(
       onTap: _onLogout,
@@ -266,7 +238,7 @@ class _SupervisorMainNavigationState extends State<SupervisorMainNavigation> {
             ),
             SizedBox(height: AppDimensions.spacingXSmall(context)),
             Text(
-              'خروج',
+              l.translate('exit'),
               style: GoogleFonts.cairo(
                 color: Colors.redAccent,
                 fontSize: AppDimensions.fontXSmall(context),

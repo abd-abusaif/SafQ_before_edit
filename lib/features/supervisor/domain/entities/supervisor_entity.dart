@@ -21,9 +21,11 @@ class SupervisorProfileEntity {
       idNumber: json['id_number'] ?? '',
       phone: json['phone'] ?? '',
       lines: (json['lines'] as List<dynamic>? ?? [])
-          .map((e) => e is Map<String, dynamic>
-              ? SupervisorLineEntity.fromJson(e)
-              : SupervisorLineEntity(id: e.toString(), name: e.toString()))
+          .map(
+            (e) => e is Map<String, dynamic>
+                ? SupervisorLineEntity.fromJson(e)
+                : SupervisorLineEntity(id: e.toString(), name: e.toString()),
+          )
           .toList(),
       gateName: json['gate_name'] ?? '',
     );

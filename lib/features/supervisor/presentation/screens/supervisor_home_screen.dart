@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../data/repositories/supervisor_repository_impl.dart';
 import '../../domain/entities/supervisor_entity.dart';
 import '../../domain/entities/supervisor_vehicle_entity.dart';
@@ -35,14 +36,17 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
 
   String get _firstName => widget.supervisorName.trim().split(' ').first;
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  AppLocalizations get l => AppLocalizations.of(context);
 
   List<SupervisorLineEntity> get _filteredLines {
     final q = _searchCtrl.text.trim().toLowerCase();
     if (q.isEmpty) return _lines;
     return _lines
-        .where((l) =>
-            l.name.toLowerCase().contains(q) ||
-            l.id.toLowerCase().contains(q))
+        .where(
+          (l) =>
+              l.name.toLowerCase().contains(q) ||
+              l.id.toLowerCase().contains(q),
+        )
         .toList();
   }
 
@@ -82,7 +86,9 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
   Future<void> _loadQueue() async {
     if (_selectedLine == null) return;
     final vehicles = await _repo.getQueueVehicles(
-        widget.idNumber, _selectedLine!.id);
+      widget.idNumber,
+      _selectedLine!.id,
+    );
     if (mounted) setState(() => _queueVehicles = vehicles);
   }
 
@@ -94,30 +100,33 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: AppColors.primary))
-            : RefreshIndicator(
-                color: AppColors.primary,
-                onRefresh: _loadAll,
-                child: CustomScrollView(
-                  slivers: [
-                    SliverToBoxAdapter(child: _buildHeader()),
-                    SliverToBoxAdapter(child: _buildActiveVehiclesCard()),
-                    SliverToBoxAdapter(child: _buildLinesTable()),
-                    SliverToBoxAdapter(child: _buildQueueSection()),
-                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                  ],
+    return Directionality(
+      textDirection: l.isArabic ? TextDirection.rtl : TextDirection.ltr,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SafeArea(
+          child: _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                )
+              : RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: _loadAll,
+                  child: CustomScrollView(
+                    slivers: [
+                      SliverToBoxAdapter(child: _buildHeader()),
+                      SliverToBoxAdapter(child: _buildActiveVehiclesCard()),
+                      SliverToBoxAdapter(child: _buildLinesTable()),
+                      SliverToBoxAdapter(child: _buildQueueSection()),
+                      const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                    ],
+                  ),
                 ),
-              ),
+        ),
       ),
     );
   }
 
-  // ── الهيدر ───────────────────────────────────────────────────────────────
   Widget _buildHeader() {
     final size = AppDimensions.avatarSmall(context);
     return Padding(
@@ -150,7 +159,7 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
             ),
           ),
           Text(
-            'أهلاً $_firstName',
+            '${l.welcomeUser} $_firstName',
             style: GoogleFonts.cairo(
               color: _isDark ? AppColors.textPrimary : Colors.black87,
               fontSize: AppDimensions.fontLarge(context),
@@ -162,7 +171,6 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
     );
   }
 
-  // ── بطاقة المركبات النشطة ────────────────────────────────────────────────
   Widget _buildActiveVehiclesCard() {
     return Container(
       margin: EdgeInsets.all(AppDimensions.spacingMedium(context)),
@@ -191,6 +199,7 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // الأيقونة في اليسار (عكس الاتجاه الطبيعي)
           Container(
             padding: EdgeInsets.all(AppDimensions.spacingSmall(context)),
             decoration: BoxDecoration(
@@ -203,22 +212,29 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
               size: AppDimensions.iconLarge(context),
             ),
           ),
+          // النص والرقم في اليمين
           Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: l.isArabic
+                ? CrossAxisAlignment.end
+                : CrossAxisAlignment.start,
             children: [
               Text(
-                'المركبات النشطة في المجمع',
+                l.translate('active_vehicles_in_compound'),
                 style: GoogleFonts.cairo(
                   color: Colors.white.withOpacity(0.9),
                   fontSize: AppDimensions.fontSmall(context),
                 ),
               ),
-              Text(
-                '$_totalActiveVehicles',
-                style: GoogleFonts.cairo(
-                  color: Colors.white,
-                  fontSize: AppDimensions.fontTitle(context),
-                  fontWeight: FontWeight.bold,
+              // الرقم - LTR دائماً
+              Directionality(
+                textDirection: TextDirection.ltr,
+                child: Text(
+                  '$_totalActiveVehicles',
+                  style: GoogleFonts.cairo(
+                    color: Colors.white,
+                    fontSize: AppDimensions.fontTitle(context),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -228,11 +244,11 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
     );
   }
 
-  // ── جدول الخطوط ──────────────────────────────────────────────────────────
   Widget _buildLinesTable() {
     return Container(
       margin: EdgeInsets.symmetric(
-          horizontal: AppDimensions.spacingMedium(context)),
+        horizontal: AppDimensions.spacingMedium(context),
+      ),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(AppDimensions.cardRadius(context)),
@@ -240,7 +256,6 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
       ),
       child: Column(
         children: [
-          // رأس الجدول
           Container(
             padding: EdgeInsets.symmetric(
               horizontal: AppDimensions.spacingMedium(context),
@@ -255,9 +270,9 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
             ),
             child: Row(
               children: [
-                _tableHeader('السيارات', flex: 2),
-                _tableHeader('اسم الخط', flex: 4),
-                _tableHeader('رقم الخط', flex: 2),
+                _tableHeader(l.translate('vehicles_col'), flex: 2),
+                _tableHeader(l.translate('line_name_col'), flex: 4),
+                _tableHeader(l.translate('line_number_col'), flex: 2),
               ],
             ),
           ),
@@ -277,18 +292,22 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
                         flex: 2,
                         child: Container(
                           padding: EdgeInsets.symmetric(
-                              vertical: AppDimensions.spacingXSmall(context)),
+                            vertical: AppDimensions.spacingXSmall(context),
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.green.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Text(
-                            '${item['vehicle_count']}',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.cairo(
-                              color: Colors.green,
-                              fontSize: AppDimensions.fontMedium(context),
-                              fontWeight: FontWeight.bold,
+                          child: Directionality(
+                            textDirection: TextDirection.ltr,
+                            child: Text(
+                              '${item['vehicle_count']}',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.cairo(
+                                color: Colors.green,
+                                fontSize: AppDimensions.fontMedium(context),
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -309,14 +328,17 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
                       ),
                       Expanded(
                         flex: 2,
-                        child: Text(
-                          '${item['line_number']}',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.cairo(
-                            color: _isDark
-                                ? AppColors.textSecondary
-                                : Colors.black54,
-                            fontSize: AppDimensions.fontSmall(context),
+                        child: Directionality(
+                          textDirection: TextDirection.ltr,
+                          child: Text(
+                            '${item['line_number']}',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.cairo(
+                              color: _isDark
+                                  ? AppColors.textSecondary
+                                  : Colors.black54,
+                              fontSize: AppDimensions.fontSmall(context),
+                            ),
                           ),
                         ),
                       ),
@@ -325,8 +347,9 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
                 ),
                 if (!isLast)
                   Divider(
-                      height: 1,
-                      color: _isDark ? Colors.white12 : Colors.black12),
+                    height: 1,
+                    color: _isDark ? Colors.white12 : Colors.black12,
+                  ),
               ],
             );
           }),
@@ -350,10 +373,11 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
     );
   }
 
-  // ── قسم الدور ────────────────────────────────────────────────────────────
   Widget _buildQueueSection() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: l.isArabic
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(
@@ -363,7 +387,7 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
             AppDimensions.spacingSmall(context),
           ),
           child: Text(
-            'إدارة الدور',
+            l.manageQueue,
             style: GoogleFonts.cairo(
               color: _isDark ? AppColors.textPrimary : Colors.black87,
               fontSize: AppDimensions.fontLarge(context),
@@ -373,29 +397,37 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
         ),
         Padding(
           padding: EdgeInsets.symmetric(
-              horizontal: AppDimensions.spacingMedium(context)),
+            horizontal: AppDimensions.spacingMedium(context),
+          ),
           child: Column(
             children: [
-              // حقل البحث
               TextField(
                 controller: _searchCtrl,
                 onChanged: (_) => setState(() {}),
-                textAlign: TextAlign.right,
+                textAlign: l.isArabic ? TextAlign.right : TextAlign.left,
+                textDirection: l.isArabic
+                    ? TextDirection.rtl
+                    : TextDirection.ltr,
                 style: GoogleFonts.cairo(
                   color: _isDark ? AppColors.textPrimary : Colors.black87,
                   fontSize: AppDimensions.fontMedium(context),
                 ),
                 decoration: InputDecoration(
-                  hintText: 'ابحث برقم أو اسم الخط...',
+                  hintText: l.translate('search_line'),
                   hintStyle: GoogleFonts.cairo(
                     color: _isDark ? AppColors.textSecondary : Colors.black38,
                     fontSize: AppDimensions.fontSmall(context),
                   ),
-                  prefixIcon:
-                      const Icon(Icons.search, color: AppColors.primary),
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: AppColors.primary,
+                  ),
                   suffixIcon: _searchCtrl.text.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear, color: AppColors.primary),
+                          icon: const Icon(
+                            Icons.clear,
+                            color: AppColors.primary,
+                          ),
                           onPressed: () {
                             _searchCtrl.clear();
                             setState(() {});
@@ -405,7 +437,6 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
                 ),
               ),
               SizedBox(height: AppDimensions.spacingSmall(context)),
-              // القائمة المنسدلة
               if (_filteredLines.isNotEmpty)
                 DropdownButtonFormField<String>(
                   value: _selectedLine?.id,
@@ -416,19 +447,29 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
                     fontSize: AppDimensions.fontMedium(context),
                   ),
                   decoration: const InputDecoration(
-                    prefixIcon:
-                        Icon(Icons.route_outlined, color: AppColors.primary),
+                    prefixIcon: Icon(
+                      Icons.route_outlined,
+                      color: AppColors.primary,
+                    ),
                   ),
                   items: _filteredLines
-                      .map((l) => DropdownMenuItem(
-                            value: l.id,
-                            child:
-                                Text(l.name, textAlign: TextAlign.right),
-                          ))
+                      .map(
+                        (ln) => DropdownMenuItem(
+                          value: ln.id,
+                          child: Text(
+                            ln.name,
+                            textAlign: l.isArabic
+                                ? TextAlign.right
+                                : TextAlign.left,
+                          ),
+                        ),
+                      )
                       .toList(),
                   onChanged: (v) {
-                    final found = _lines.firstWhere((l) => l.id == v,
-                        orElse: () => _lines.first);
+                    final found = _lines.firstWhere(
+                      (ln) => ln.id == v,
+                      orElse: () => _lines.first,
+                    );
                     setState(() => _selectedLine = found);
                     _loadQueue();
                   },
@@ -437,29 +478,29 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
           ),
         ),
         SizedBox(height: AppDimensions.spacingMedium(context)),
-        // قائمة الدور
         if (_queueVehicles.isEmpty)
           Padding(
             padding: EdgeInsets.all(AppDimensions.spacingLarge(context)),
             child: Center(
               child: Text(
-                'لا توجد مركبات في الدور',
+                l.translate('no_vehicles_in_queue'),
                 style: GoogleFonts.cairo(
-                  color:
-                      _isDark ? AppColors.textSecondary : Colors.black54,
+                  color: _isDark ? AppColors.textSecondary : Colors.black54,
                   fontSize: AppDimensions.fontMedium(context),
                 ),
               ),
             ),
           )
         else
-          ...(_queueVehicles.map((v) => Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppDimensions.spacingMedium(context),
-                  vertical: AppDimensions.spacingXSmall(context),
-                ),
-                child: _buildQueueItem(v),
-              ))),
+          ...(_queueVehicles.map(
+            (v) => Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppDimensions.spacingMedium(context),
+                vertical: AppDimensions.spacingXSmall(context),
+              ),
+              child: _buildQueueItem(v),
+            ),
+          )),
       ],
     );
   }
@@ -470,36 +511,42 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(AppDimensions.cardRadius(context)),
-        border:
-            Border.all(color: AppColors.primary.withOpacity(0.25), width: 1),
+        border: Border.all(
+          color: AppColors.primary.withOpacity(0.25),
+          width: 1,
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // رقم الدور
+          // رقم الدور - في اليسار للـ RTL
           Container(
             width: AppDimensions.avatarSmall(context) * 0.75,
             height: AppDimensions.avatarSmall(context) * 0.75,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.primary.withOpacity(0.15),
-              border:
-                  Border.all(color: AppColors.primary.withOpacity(0.5)),
+              border: Border.all(color: AppColors.primary.withOpacity(0.5)),
             ),
             child: Center(
-              child: Text(
-                '#${v.queuePosition}',
-                style: GoogleFonts.cairo(
-                  color: AppColors.primary,
-                  fontSize: AppDimensions.fontXSmall(context),
-                  fontWeight: FontWeight.bold,
+              child: Directionality(
+                textDirection: TextDirection.ltr,
+                child: Text(
+                  '#${v.queuePosition}',
+                  style: GoogleFonts.cairo(
+                    color: AppColors.primary,
+                    fontSize: AppDimensions.fontXSmall(context),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
           ),
           // معلومات السائق
           Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: l.isArabic
+                ? CrossAxisAlignment.end
+                : CrossAxisAlignment.start,
             children: [
               Text(
                 v.driverName,
@@ -512,33 +559,36 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
               SizedBox(height: AppDimensions.spacingXSmall(context)),
               Row(
                 children: [
-                  Text(
-                    v.entryTime,
-                    style: GoogleFonts.cairo(
-                      color: _isDark
-                          ? AppColors.textSecondary
-                          : Colors.black54,
-                      fontSize: AppDimensions.fontXSmall(context),
+                  // وقت الدخول LTR
+                  Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: Text(
+                      v.entryTime,
+                      style: GoogleFonts.cairo(
+                        color: _isDark
+                            ? AppColors.textSecondary
+                            : Colors.black54,
+                        fontSize: AppDimensions.fontXSmall(context),
+                      ),
                     ),
                   ),
                   Padding(
                     padding: EdgeInsets.symmetric(
-                        horizontal: AppDimensions.spacingSmall(context)),
+                      horizontal: AppDimensions.spacingSmall(context),
+                    ),
                     child: Container(
-                        width: 3,
-                        height: 3,
-                        decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _isDark
-                                ? Colors.white38
-                                : Colors.black38)),
+                      width: 3,
+                      height: 3,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _isDark ? Colors.white38 : Colors.black38,
+                      ),
+                    ),
                   ),
                   Text(
                     v.vehiclePlate,
                     style: GoogleFonts.cairo(
-                      color: _isDark
-                          ? AppColors.textSecondary
-                          : Colors.black54,
+                      color: _isDark ? AppColors.textSecondary : Colors.black54,
                       fontSize: AppDimensions.fontXSmall(context),
                       fontWeight: FontWeight.w600,
                     ),
