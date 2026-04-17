@@ -14,6 +14,7 @@ class DriverRepositoryImpl implements DriverRepository {
       QueueEntryEntity(
         queuePosition: 1,
         driverName: 'أحمد محمد',
+        vehicleNumber: '6 2181-10',
         lineFrom: 'الخليل',
         lineTo: 'دورا',
         entryTime: '7:15 ص',
@@ -24,6 +25,7 @@ class DriverRepositoryImpl implements DriverRepository {
       QueueEntryEntity(
         queuePosition: 2,
         driverName: 'محمود علي',
+        vehicleNumber: '6 2181-20',
         lineFrom: 'الخليل',
         lineTo: 'دورا',
         entryTime: '7:20 ص',
@@ -34,6 +36,7 @@ class DriverRepositoryImpl implements DriverRepository {
       QueueEntryEntity(
         queuePosition: 3,
         driverName: 'خالد إبراهيم',
+        vehicleNumber: '6 2181-30',
         lineFrom: 'الخليل',
         lineTo: 'دورا',
         entryTime: '7:25 ص',
@@ -44,6 +47,7 @@ class DriverRepositoryImpl implements DriverRepository {
       QueueEntryEntity(
         queuePosition: 4,
         driverName: 'يوسف سالم',
+        vehicleNumber: '6 2181-40',
         lineFrom: 'الخليل',
         lineTo: 'دورا',
         entryTime: '7:30 ص',
@@ -54,6 +58,7 @@ class DriverRepositoryImpl implements DriverRepository {
       QueueEntryEntity(
         queuePosition: 5,
         driverName: 'عبدالرحمن أبو سيف',
+        vehicleNumber: '6 2181-50',
         lineFrom: 'الخليل',
         lineTo: 'دورا',
         entryTime: '7:35 ص',
@@ -64,6 +69,7 @@ class DriverRepositoryImpl implements DriverRepository {
       QueueEntryEntity(
         queuePosition: 6,
         driverName: 'سامي ناصر',
+        vehicleNumber: '6 2181-60',
         lineFrom: 'الخليل',
         lineTo: 'دورا',
         entryTime: '7:40 ص',
@@ -74,6 +80,7 @@ class DriverRepositoryImpl implements DriverRepository {
       QueueEntryEntity(
         queuePosition: 7,
         driverName: 'فارس عودة',
+        vehicleNumber: '6 2181-70',
         lineFrom: 'الخليل',
         lineTo: 'دورا',
         entryTime: '7:45 ص',
@@ -88,10 +95,17 @@ class DriverRepositoryImpl implements DriverRepository {
   Future<QueueEntryEntity?> getMyQueueEntry(String idNumber) async {
     // API: GET /api/driver/queue/me/$idNumber
     final list = await getQueueList();
-    // يُرجع الإدخال الخاص بالسائق الحالي (رقم الدور 5 في المثال)
     return list.firstWhere(
       (e) => e.queuePosition == 5,
       orElse: () => list.first,
     );
+  }
+
+  /// عدد الخانات المسموح بالتحميل فيها حالياً
+  /// API: GET /api/driver/queue/allowed-slots
+  Future<int> getAllowedSlots() async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    // Mock: أول 3 مراكب مسموح لها بالتحميل
+    return 3;
   }
 }

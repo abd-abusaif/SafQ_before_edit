@@ -49,6 +49,7 @@ class DriverProfileRepositoryImpl implements DriverProfileRepository {
   @override
   Future<VehicleInfoEntity> getVehicleInfo(String idNumber) async {
     // API: GET /api/driver/vehicle/$idNumber
+    // Response includes "loading_allowed_until": "2026-04-30"
     await Future.delayed(const Duration(milliseconds: 500));
     return const VehicleInfoEntity(
       vehicleNumber: '6 2181-30',
@@ -61,7 +62,7 @@ class DriverProfileRepositoryImpl implements DriverProfileRepository {
       operationExpiry: '2025-04-22',
       vehicleLicExpiry: '2026-03-20',
       insuranceExpiry: '2026-09-10',
-      loadingAllowed: true,
+      loadingAllowedUntil: '2026-04-30',
     );
   }
 }
