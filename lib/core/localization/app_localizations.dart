@@ -261,3 +261,89 @@ class _AppLocalizationsDelegate
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
+
+// ── Extension for new keys ────────────────────────────────────────────────────
+extension AppLocalizationsExtended on AppLocalizations {
+  // Navigation
+  String get myLines => translate('my_lines');
+  String get myAccount => translate('my_account');
+
+  // Supervisor Home
+  String get activeVehiclesInCompound =>
+      translate('active_vehicles_in_compound');
+  String get noVehiclesInQueue => translate('no_vehicles_in_queue');
+  String get searchLine => translate('search_line');
+  String get vehiclesCol => translate('vehicles_col');
+  String get lineNameCol => translate('line_name_col');
+  String get lineNumberCol => translate('line_number_col');
+
+  // Security Home
+  String get approvedCount => translate('approved_count');
+
+  // Supervisor Permissions Center
+  String get permissionsCenter => translate('permissions_center');
+  String get pendingTab => translate('pending_tab');
+  String get approvedTab => translate('approved_tab');
+  String get rejectedTab => translate('rejected_tab');
+  String get noPendingPermissions => translate('no_pending_permissions');
+  String get pendingStatus => translate('pending_status');
+  String get approvedStatus => translate('approved_status');
+  String get rejectedStatus => translate('rejected_status');
+  String get noApprovedPermissions => translate('no_approved_permissions');
+  String get noRejectedPermissions => translate('no_rejected_permissions');
+  String get rejectPermission => translate('reject_permission');
+  String get rejectReasonHint => translate('reject_reason_hint');
+  String get rejectReasonExample => translate('reject_reason_example');
+  String get send => translate('send');
+  String get approveBtn => translate('approve_btn');
+  String get rejectBtn => translate('reject_btn');
+  String get driverNameLabel => translate('driver_name_label');
+  String get vehicleNumLabel => translate('vehicle_num_label');
+  String get lineLabel => translate('line_label');
+  String get durationLabel => translate('duration_label');
+  String get requestDateLabel => translate('request_date_label');
+  String get rejectionNoteLabel => translate('rejection_note_label');
+
+  // Supervisor Lines
+  String get myLinesTitle => translate('my_lines_title');
+  String get noAssignedLines => translate('no_assigned_lines');
+  String get linePrefix => translate('line_prefix');
+  String get registeredVehicles => translate('registered_vehicles');
+  String get vehiclesCount => translate('vehicles_count');
+  String get passengerFareLabel => translate('passenger_fare_label');
+  String get vehicleDetails => translate('vehicle_details');
+  String get operatingLicenseLabel => translate('operating_license_label');
+  String get driverIdLabel => translate('driver_id_label');
+  String get driverPhoneLabel => translate('driver_phone_label');
+
+  // Supervisor Notifications
+  String get rejectedLabelCount => translate('rejected_label_count');
+  String get handledStatus => translate('handled_status');
+  String get needsIntervention => translate('needs_intervention');
+  String get handleVehicleBtn => translate('handle_vehicle_btn');
+  String get handleConfirmTitle => translate('handle_confirm_title');
+  String get handleConfirmMsg => translate('handle_confirm_msg');
+  String get driverLabel => translate('driver_label');
+  String get vehicleLabel => translate('vehicle_label');
+  String get lineRouteLabel => translate('line_route_label');
+
+  // Security Notifications
+  String get needsAttentionCount => translate('needs_attention_count');
+  String get rejectedVehicleNotification =>
+      translate('rejected_vehicle_notification');
+  String get handledBySupervisor => translate('handled_by_supervisor');
+  String get rejectionReasonLabel => translate('rejection_reason_label');
+
+  // Profile - shared
+  String get personalInfo => translate('personal_info');
+  String get supervisorRoleLabel => translate('supervisor_role_label');
+  String get securityRoleLabel => translate('security_role_label');
+  String get nameLabel => translate('name_label');
+  String get idLabel => translate('id_label');
+  String get phoneInfoLabel => translate('phone_info_label');
+
+  // General
+  String get exit => translate('exit');
+  String get signOut => translate('sign_out');
+  String get signOutQuestion => translate('sign_out_question');
+}

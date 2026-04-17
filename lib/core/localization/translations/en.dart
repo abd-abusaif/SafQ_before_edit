@@ -44,6 +44,8 @@ const Map<String, String> enTranslations = {
   'profile': 'Profile',
   'permissions': 'Permits',
   'violations': 'Violations',
+  'my_lines': 'My Lines',
+  'my_account': 'Account',
 
   // ── Home — Driver ─────────────────────────────────
   'welcome_user': 'Hello',
@@ -56,16 +58,55 @@ const Map<String, String> enTranslations = {
   'violation_block_warn':
       'You have a violation blocking queue registration.\nCheck the violations page.',
 
+  // ── Loading Validity ──────────────────────────────
+  'loading_validity': 'Loading Permit Validity',
+  'loading_validity_expired': 'Loading Permit Expired',
+  'days_remaining': 'remaining',
+  'hours_remaining': 'remaining',
+  'day': 'day',
+  'hour': 'hour',
+  'minute': 'min',
+  'expired': 'Expired',
+
+  // ── License Warning ───────────────────────────────
+  'operating_license': 'Operating License',
+  'vehicle_license_warn': 'Vehicle License',
+  'driver_license_warn': 'Driver License',
+  'license_expired_warn': 'Expired',
+  'register_blocked': 'Queue Registration Blocked - License Expired',
+
+  // ── Movement Permit ───────────────────────────────
+  'movement_permit': 'Movement Permit',
+  'available_slots': 'Available Slots',
+  'generate_permit': 'Generate Permit',
+  'permit_vehicle': 'Vehicle Number',
+  'permit_exit_time': 'Exit Time',
+  'permit_exit_gate': 'Exit Gate',
+  'permit_license_num': 'Operating License No.',
+  'permit_destination': 'Final Destination',
+  'close': 'Close',
+
+  // ── Entered Vehicles ──────────────────────────────
+  'entered_vehicles': 'Registered Vehicles',
+  'entry_time': 'Entry Time',
+
   // ── Home — Supervisor ─────────────────────────────
   'manage_queue': 'Queue Management',
   'active_vehicles': 'Active\nVehicles',
   'waiting': 'Waiting',
   'completed_trips': 'Completed\nTrips',
+  'active_vehicles_in_compound': 'Active Vehicles in Compound',
+  'no_vehicles_in_queue': 'No vehicles in queue',
+  'search_line': 'Search by line number or name...',
+  'vehicles_col': 'Vehicles',
+  'line_name_col': 'Line Name',
+  'line_number_col': 'Line No.',
 
   // ── Home — Security ───────────────────────────────
   'vehicle_status': 'Vehicle Status',
   'no_vehicles': 'No vehicles at the moment',
   'rejected_count': 'Rejected',
+  'approved_count': 'Approved',
   'handled_confirm': 'Confirm Completion',
   'handled_question': 'Has the case been handled for',
   'done': 'Done',
@@ -73,12 +114,67 @@ const Map<String, String> enTranslations = {
   'rejected': 'Rejected',
   'mark_handled': 'Mark as Handled',
 
+  // ── Supervisor Permissions Center ─────────────────
+  'permissions_center': 'Permissions Center',
+  'pending_tab': 'Pending',
+  'approved_tab': 'Approved',
+  'rejected_tab': 'Rejected',
+  'no_pending_permissions': 'No pending permissions',
+  'pending_status': 'Pending',
+  'approved_status': 'Approved',
+  'rejected_status': 'Rejected',
+  'no_approved_permissions': 'No approved permissions',
+  'no_rejected_permissions': 'No rejected permissions',
+  'reject_permission': 'Reject Permission',
+  'reject_reason_hint': 'Write rejection reason for driver:',
+  'reject_reason_example': 'e.g. No replacement driver available...',
+  'send': 'Send',
+  'approve_btn': 'Approve',
+  'reject_btn': 'Reject',
+  'approved_snack': 'Permission approved for',
+  'rejected_snack': 'Permission rejected for',
+  'driver_name_label': 'Driver Name',
+  'vehicle_num_label': 'Vehicle Number',
+  'line_label': 'Line',
+  'duration_label': 'Duration',
+  'request_date_label': 'Request Date',
+  'rejection_note_label': 'Rejection Note',
+
+  // ── Supervisor Lines ──────────────────────────────
+  'my_lines_title': 'My Lines',
+  'no_assigned_lines': 'No assigned lines',
+  'line_prefix': 'Line No.',
+  'registered_vehicles': 'Registered Vehicles',
+  'vehicles_count': 'vehicles',
+  'passenger_fare_label': 'Passenger Fare',
+  'vehicle_details': 'Vehicle Details',
+  'operating_license_label': 'Operating License',
+  'driver_id_label': 'Driver ID',
+  'driver_phone_label': 'Phone Number',
+
+  // ── Supervisor Notifications ──────────────────────
+  'rejected_label_count': 'Rejected:',
+  'handled_status': 'Handled',
+  'needs_intervention': 'Blocked - Needs Intervention',
+  'handle_vehicle_btn': 'Mark Vehicle as Handled',
+  'handle_confirm_title': 'Confirm Action',
+  'handle_confirm_msg': 'Has the vehicle been handled for',
+  'driver_label': 'Driver',
+  'vehicle_label': 'Vehicle',
+  'line_route_label': 'Line',
+
+  // ── Security Notifications ────────────────────────
+  'needs_attention_count': 'Needs Attention:',
+  'rejected_vehicle_notification': 'No rejected vehicle notifications',
+  'handled_by_supervisor': 'Case handled by supervisor',
+  'rejection_reason_label': 'Rejection Reason',
+
   // ── Profile ───────────────────────────────────────
   'personal_page': 'Profile',
   'edit_password': 'Change Password',
   'switch_light': 'Switch to Light',
   'switch_dark': 'Switch to Dark',
-  'switch_language': 'عربي', // ← زر تغيير اللغة
+  'switch_language': 'عربي',
   'driver_info': 'Driver Information',
   'line_info': 'Line Information',
   'vehicle_info': 'Vehicle Information',
@@ -94,16 +190,24 @@ const Map<String, String> enTranslations = {
   'license_expiry': 'License Expiry',
   'medical_expiry': 'Medical Exam Expiry',
   'line_number': 'Line Route',
+  'line_from_to': 'Line From-To',
+  'line_route': 'Route',
   'passenger_fare': 'Passenger Fare',
   'vehicle_number': 'Vehicle Number',
   'vehicle_code': 'Vehicle Code',
   'model': 'Model',
+  'company': 'Company',
+  'production_year': 'Production Year',
   'driver_type': 'Driver Type',
   'seats': 'Seats',
   'operation_expiry': 'Operation License Expiry',
   'vehicle_lic_expiry': 'Vehicle License Expiry',
   'insurance_expiry': 'Insurance Expiry',
   'chassis_number': 'Chassis Number',
+  'chassis_confirm': 'Chassis (Confirm)',
+  'loading_allowed': 'Loading Permission Status',
+  'loading_yes': 'Allowed',
+  'loading_no': 'Not Allowed',
   'owner_name': 'Owner Name',
   'owner_id': 'Owner ID',
   'owner_phone': 'Owner Phone',
@@ -111,6 +215,13 @@ const Map<String, String> enTranslations = {
   'phone_label': 'Phone Number',
   'lines_responsible': 'Assigned Lines',
   'lines_count': 'lines',
+  'line_label2': 'line',
+  'personal_info': 'Personal Information',
+  'supervisor_role_label': 'Line Supervisor',
+  'security_role_label': 'Security Officer',
+  'name_label': 'Name',
+  'id_label': 'ID Number',
+  'phone_info_label': 'Phone Number',
 
   // ── Change Password ───────────────────────────────
   'change_password': 'Change Password',
@@ -133,7 +244,7 @@ const Map<String, String> enTranslations = {
   'enter_new_pass': 'Please enter new password',
   'confirm_pass': 'Please confirm your password',
 
-  // ── Permissions ───────────────────────────────────
+  // ── Permissions (Driver) ──────────────────────────
   'permissions_title': 'Permits',
   'approved_permissions': 'Approved Permits',
   'new_permission': 'New Permit Request',
@@ -145,6 +256,7 @@ const Map<String, String> enTranslations = {
   'reason_hint': 'Write the reason...',
   'request_date': 'Request Date',
   'duration': 'Duration',
+  'reason_required': 'Please write the reason',
   'send_request': 'Submit Request',
   'request_sent': 'Request Submitted',
   'request_sent_msg':
@@ -163,9 +275,10 @@ const Map<String, String> enTranslations = {
   'violations_title': 'Violations',
   'no_violations': 'No Violations',
   'clean_record': 'Your record is clean! Keep it up.',
-  'total_violations': 'Total Violations',
+  'total_violations': 'Total Amount',
+  'total_count': 'Violations Count',
   'block_entry_warn':
-      'You have a violation blocking queue registration.\nPlease contact management to resolve it.',
+      'You have a violation blocking queue.\nPlease contact management.',
   'with_block': 'Entry Blocked',
   'without_block': 'No Block',
   'violation_type': 'Violation Type',
@@ -182,4 +295,7 @@ const Map<String, String> enTranslations = {
   'unexpected_err': 'An error occurred, please try again',
   'refresh': 'Refresh',
   'loading': 'Loading...',
+  'exit': 'Exit',
+  'sign_out': 'Sign Out',
+  'sign_out_question': 'Do you want to sign out?',
 };
