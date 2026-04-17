@@ -3,9 +3,10 @@
 class QueueEntryEntity {
   final int queuePosition;
   final String driverName;
+  final String vehicleNumber; // رقم المركبة
   final String lineFrom;
   final String lineTo;
-  final String entryTime;
+  final String entryTime; // وقت دخول المركبة عند تسجيلها (RFID)
   final String? exitTime;
   final int registrationNumber;
   final DateTime? loadingValidityDate;
@@ -13,6 +14,7 @@ class QueueEntryEntity {
   const QueueEntryEntity({
     required this.queuePosition,
     required this.driverName,
+    required this.vehicleNumber,
     required this.lineFrom,
     required this.lineTo,
     required this.entryTime,
@@ -25,6 +27,7 @@ class QueueEntryEntity {
     return QueueEntryEntity(
       queuePosition: json['queue_position'] ?? 0,
       driverName: json['driver_name'] ?? '',
+      vehicleNumber: json['vehicle_number'] ?? '',
       lineFrom: json['line_from'] ?? '',
       lineTo: json['line_to'] ?? '',
       entryTime: json['entry_time'] ?? '',

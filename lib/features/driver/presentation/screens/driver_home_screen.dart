@@ -10,13 +10,6 @@ import '../../domain/entities/queue_entry_entity.dart';
 import '../../domain/entities/driver_profile_entity.dart';
 import '../widgets/queue_item_widget.dart';
 
-// ── بيانات المركبات المسجّلة دخولاً ────────────────
-class _EnteredVehicle {
-  final String vehicleNumber;
-  final String entryTime;
-  const _EnteredVehicle(this.vehicleNumber, this.entryTime);
-}
-
 class DriverHomeScreen extends StatefulWidget {
   final String driverName;
   final String idNumber;
@@ -49,24 +42,14 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   bool _hasBlockViolation = false;
   String _rejectionReason = '';
 
-  // ── Timers ─────────────────────────────────────────
+  /// عدد الخانات المسموح بالتحميل من API
+  int _allowedSlots = 3;
+
   Timer? _refreshTimer;
   Timer? _countdownTimer;
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
   AppLocalizations get l => AppLocalizations.of(context);
-
-  // ── Mock: المركبات المسجّلة دخولاً ───────────────
-  final List<_EnteredVehicle> _enteredVehicles = const [
-    _EnteredVehicle('أ ب ت 001', '6:30 ص'),
-    _EnteredVehicle('ح خ د 202', '6:45 ص'),
-    _EnteredVehicle('ر ز س 303', '7:00 ص'),
-    _EnteredVehicle('ش ص ض 404', '7:10 ص'),
-    _EnteredVehicle('ر ح ن 123', '7:20 ص'),
-  ];
-
-  // ── Mock: خانات شاغرة ────────────────────────────
-  final int _availableSlots = 3;
 
   @override
   void initState() {
@@ -96,6 +79,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         _repo.getMyQueueEntry(widget.idNumber),
         _profileRepo.getVehicleInfo(widget.idNumber),
         _profileRepo.getDriverInfo(widget.idNumber),
+        _repo.getAllowedSlots(),
       ]);
 
       final allList = results[0] as List<QueueEntryEntity>;
@@ -107,11 +91,13 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       final myEntry = results[1] as QueueEntryEntity?;
       final vehicleInfo = results[2] as VehicleInfoEntity;
       final driverInfo = results[3] as DriverInfoEntity;
+      final allowedSlots = results[4] as int;
 
       setState(() {
         _hasBlockViolation = false;
         _isRegistered = true;
         _rejectionReason = '';
+        _allowedSlots = allowedSlots;
         _queueList = _isRegistered ? filtered : [];
         _myEntry = _isRegistered ? myEntry : null;
         _vehicleInfo = vehicleInfo;
@@ -126,8 +112,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   String _loadingCountdown(DateTime validity) {
     final diff = validity.difference(DateTime.now());
     if (diff.isNegative) return l.expiredLabel;
-    if (diff.inDays > 0)
-      return '${l.dayLabel.split(' ')[0] == 'متبقي' ? '' : ''}متبقي ${diff.inDays} ${l.dayLabel}';
+    if (diff.inDays > 0) return 'متبقي ${diff.inDays} ${l.dayLabel}';
     if (diff.inHours > 0) return 'متبقي ${diff.inHours} ${l.hourLabel}';
     return 'متبقي ${diff.inMinutes} ${l.minuteLabel}';
   }
@@ -139,7 +124,6 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
 
   bool _isLoadingExpired(DateTime validity) => DateTime.now().isAfter(validity);
 
-  // ── منطق تنبيه الرخص (15 يوماً) ─────────────────
   int _daysRemaining(String dateStr) {
     try {
       return DateTime.parse(dateStr).difference(DateTime.now()).inDays;
@@ -160,10 +144,23 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       !_vehicleLicenseExpired &&
       (_vehicleInfo?.loadingAllowed ?? true);
 
+  /// هل الدور الحالي ضمن الخانات المسموح بالتحميل؟
+  bool get _isInAllowedSlot =>
+      _myEntry != null && _myEntry!.queuePosition <= _allowedSlots;
+
   String _getInitials(String name) {
     final parts = name.trim().split(' ');
     if (parts.length >= 2) return '${parts.first[0]}${parts.last[0]}';
     return parts.first[0];
+  }
+
+  String _formatDate(String dateStr) {
+    try {
+      final dt = DateTime.parse(dateStr);
+      return '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return dateStr;
+    }
   }
 
   @override
@@ -182,36 +179,29 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                   slivers: [
                     SliverToBoxAdapter(child: _buildHeader()),
 
-                    // ⛔ تنبيه المخالفة
+                    // تنبيه المخالفة
                     if (_hasBlockViolation)
                       SliverToBoxAdapter(child: _buildViolationWarning()),
 
-                    // ⛔ تنبيه حظر تسجيل الدور
+                    // تنبيه حظر تسجيل الدور
                     if (!_canRegisterQueue)
                       SliverToBoxAdapter(child: _buildRegisterBlockedBanner()),
 
-                    // ── بطاقة الدور ─────────────────────────────
+                    // بطاقة الدور الرئيسية
                     if (_isRegistered)
                       SliverToBoxAdapter(child: _buildInfoCard()),
 
                     if (!_isRegistered)
                       SliverToBoxAdapter(child: _buildRejectedCard()),
 
-                    // ── تنبيه تاريخ التحميل ──────────────────────
+                    // بانر تاريخ التحميل المسموح
                     if (_isRegistered && _myEntry?.loadingValidityDate != null)
                       SliverToBoxAdapter(child: _buildLoadingValidityBanner()),
 
-                    // ── تنبيهات الرخص (تظهر فقط قبل 15 يوماً) ──
+                    // تنبيهات الرخص
                     SliverToBoxAdapter(child: _buildLicenseWarnings()),
 
-                    // ── إذن الحركة ───────────────────────────────
-                    if (_availableSlots > 0)
-                      SliverToBoxAdapter(child: _buildMovementPermitCard()),
-
-                    // ── المركبات المسجّلة دخولاً ─────────────────
-                    SliverToBoxAdapter(child: _buildEnteredVehiclesCard()),
-
-                    // ── عنوان حالة الدور ─────────────────────────
+                    // عنوان حالة الدور
                     if (_isRegistered)
                       SliverToBoxAdapter(
                         child: Padding(
@@ -223,9 +213,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                           ),
                           child: Text(
                             l.queueStatus,
-                            textAlign: l.isArabic
-                                ? TextAlign.right
-                                : TextAlign.left,
+                            textAlign: TextAlign.right,
                             style: GoogleFonts.cairo(
                               color: _isDark
                                   ? AppColors.textPrimary
@@ -237,7 +225,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                         ),
                       ),
 
-                    // ── قائمة الدور ──────────────────────────────
+                    // قائمة الدور
                     if (_isRegistered)
                       SliverPadding(
                         padding: EdgeInsets.symmetric(
@@ -254,6 +242,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                               isCurrentDriver:
                                   entry.queuePosition ==
                                   _myEntry?.queuePosition,
+                              allowedSlots: _allowedSlots,
                             );
                           }, childCount: _queueList.length),
                         ),
@@ -268,7 +257,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   }
 
   // ═══════════════════════════════════════════════
-  //  الهيدر — الاسم الأول فقط
+  //  الهيدر
   // ═══════════════════════════════════════════════
   Widget _buildHeader() {
     final firstName =
@@ -284,7 +273,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          if (!l.isArabic) _buildAvatar(avatarSize),
+          // الأيقونة على الشمال
+          _buildAvatar(avatarSize),
+          // الترحيب والاسم على اليمين
           Text(
             '${l.welcomeUser} $firstName',
             style: GoogleFonts.cairo(
@@ -293,7 +284,6 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          if (l.isArabic) _buildAvatar(avatarSize),
         ],
       ),
     );
@@ -323,8 +313,12 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
 
   // ═══════════════════════════════════════════════
   //  بطاقة الدور الرئيسية
+  //  - رقم الدور يتلوّن أخضر إذا ضمن الخانات المسموحة
+  //  - وقت الدخول من RFID
   // ═══════════════════════════════════════════════
   Widget _buildInfoCard() {
+    final positionColor = _isInAllowedSlot ? Colors.green : AppColors.primary;
+
     return Container(
       margin: EdgeInsets.all(AppDimensions.spacingMedium(context)),
       decoration: BoxDecoration(
@@ -332,47 +326,68 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         borderRadius: BorderRadius.circular(AppDimensions.cardRadius(context)),
         border: Border.all(color: AppColors.primary.withOpacity(0.4), width: 1),
       ),
-      child: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              AppDimensions.spacingMedium(context),
-              AppDimensions.spacingMedium(context),
-              AppDimensions.spacingMedium(context),
-              AppDimensions.spacingSmall(context),
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppDimensions.spacingMedium(context),
+                AppDimensions.spacingMedium(context),
+                AppDimensions.spacingMedium(context),
+                AppDimensions.spacingSmall(context),
+              ),
+              child: Row(
+                children: [
+                  _buildCardLabel(l.queueNumber),
+                  _buildDividerVertical(),
+                  _buildCardLabel(l.queueTime),
+                ],
+              ),
             ),
-            child: Row(
-              children: [
-                _buildCardLabel(l.queueNumber),
-                _buildDividerVertical(),
-                _buildCardLabel(l.queueTime),
-                _buildDividerVertical(),
-                _buildCardLabel(l.queueReg),
-              ],
+            Divider(
+              color: _isDark ? Colors.white12 : Colors.black12,
+              height: 1,
             ),
-          ),
-          Divider(color: _isDark ? Colors.white12 : Colors.black12, height: 1),
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              AppDimensions.spacingMedium(context),
-              AppDimensions.spacingSmall(context),
-              AppDimensions.spacingMedium(context),
-              AppDimensions.spacingMedium(context),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppDimensions.spacingMedium(context),
+                AppDimensions.spacingSmall(context),
+                AppDimensions.spacingMedium(context),
+                AppDimensions.spacingMedium(context),
+              ),
+              child: Row(
+                children: [
+                  // رقم الدور — أخضر إذا ضمن المسموح
+                  Expanded(
+                    child: Text(
+                      '${_myEntry?.queuePosition ?? '-'}',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.cairo(
+                        color: positionColor,
+                        fontSize: AppDimensions.fontXLarge(context),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  _buildDividerVertical(),
+                  // وقت دخول المركبة (RFID) فقط
+                  Expanded(
+                    child: Text(
+                      _myEntry?.entryTime ?? '-',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.cairo(
+                        color: _isDark ? AppColors.textPrimary : Colors.black87,
+                        fontSize: AppDimensions.fontLarge(context),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: Row(
-              children: [
-                _buildCardValue('${_myEntry?.queuePosition ?? '-'}'),
-                _buildDividerVertical(),
-                _buildCardValue(
-                  '${_myEntry?.entryTime ?? '-'} –\n${_myEntry?.exitTime ?? '-'}',
-                  isSmall: true,
-                ),
-                _buildDividerVertical(),
-                _buildCardValue('${_myEntry?.registrationNumber ?? '-'}'),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -385,10 +400,12 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     final expired = _isLoadingExpired(validity);
     final soon = _isLoadingExpiringSoon(validity);
 
-    if (!expired && !soon) return const SizedBox.shrink();
-
-    final color = expired ? Colors.redAccent : Colors.orange;
-    final label = expired ? l.loadingValidityExpired : l.loadingValidity;
+    // يظهر دائماً (ليس فقط عند الانتهاء القريب)
+    final color = expired
+        ? Colors.redAccent
+        : soon
+        ? Colors.orange
+        : AppColors.primary;
 
     return Container(
       margin: EdgeInsets.symmetric(
@@ -401,125 +418,88 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         borderRadius: BorderRadius.circular(AppDimensions.cardRadius(context)),
         border: Border.all(color: color, width: 1.5),
       ),
-      child: Row(
-        mainAxisAlignment: l.isArabic
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
-        children: [
-          if (!l.isArabic) ...[
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Row(
+          children: [
             Icon(
-              expired ? Icons.error_rounded : Icons.warning_amber_rounded,
+              expired ? Icons.error_rounded : Icons.calendar_today_rounded,
               color: color,
               size: AppDimensions.iconSmall(context),
             ),
             SizedBox(width: AppDimensions.spacingSmall(context)),
-          ],
-          Expanded(
-            child: Column(
-              crossAxisAlignment: l.isArabic
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.cairo(
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                    fontSize: AppDimensions.fontSmall(context),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    expired ? l.loadingValidityExpired : l.loadingValidity,
+                    style: GoogleFonts.cairo(
+                      color: color,
+                      fontWeight: FontWeight.bold,
+                      fontSize: AppDimensions.fontSmall(context),
+                    ),
                   ),
-                ),
-                Text(
-                  _loadingCountdown(validity),
-                  style: GoogleFonts.cairo(
-                    color: color,
-                    fontSize: AppDimensions.fontXSmall(context),
+                  Text(
+                    _formatDate(validity.toIso8601String().split('T').first),
+                    style: GoogleFonts.cairo(
+                      color: color,
+                      fontSize: AppDimensions.fontXSmall(context),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          if (l.isArabic) ...[
-            SizedBox(width: AppDimensions.spacingSmall(context)),
-            Icon(
-              expired ? Icons.error_rounded : Icons.warning_amber_rounded,
-              color: color,
-              size: AppDimensions.iconSmall(context),
+                  Text(
+                    _loadingCountdown(validity),
+                    style: GoogleFonts.cairo(
+                      color: color.withOpacity(0.8),
+                      fontSize: AppDimensions.fontXSmall(context),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
-        ],
+        ),
       ),
     );
   }
 
   // ═══════════════════════════════════════════════
-  //  تنبيهات الرخص — تظهر فقط قبل 15 يوماً
+  //  تنبيهات الرخص — بدون إيموجي — RTL
   // ═══════════════════════════════════════════════
   Widget _buildLicenseWarnings() {
-    if (_vehicleInfo == null && _driverInfo == null)
+    if (_vehicleInfo == null && _driverInfo == null) {
       return const SizedBox.shrink();
+    }
 
-    final List<Widget> warnings = [];
+    final List<_LicenseItem> items = [];
 
-    void addWarning(String label, int days) {
-      if (days > 15) return;
-      final expired = days < 0;
-      final color = expired ? Colors.redAccent : Colors.orange;
-      final text = expired
-          ? l.licenseExpiredWarn
-          : '${l.dayLabel.contains('يوم') ? 'متبقي' : 'Remaining'} ${days.abs()} ${l.dayLabel}';
-
-      warnings.add(
-        Container(
-          margin: EdgeInsets.only(bottom: AppDimensions.spacingXSmall(context)),
-          padding: EdgeInsets.symmetric(
-            horizontal: AppDimensions.spacingMedium(context),
-            vertical: AppDimensions.spacingSmall(context),
-          ),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(
-              AppDimensions.cardRadius(context),
-            ),
-            border: Border.all(color: color.withOpacity(0.6)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                text,
-                style: GoogleFonts.cairo(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: AppDimensions.fontXSmall(context),
-                ),
-              ),
-              Text(
-                label,
-                style: GoogleFonts.cairo(
-                  color: color,
-                  fontSize: AppDimensions.fontXSmall(context),
-                ),
-              ),
-            ],
-          ),
+    if (_vehicleInfo != null) {
+      items.add(
+        _LicenseItem(
+          label: l.operatingLicense,
+          days: _daysRemaining(_vehicleInfo!.operationExpiry),
+          dateStr: _vehicleInfo!.operationExpiry,
+        ),
+      );
+      items.add(
+        _LicenseItem(
+          label: l.vehicleLicWarn,
+          days: _daysRemaining(_vehicleInfo!.vehicleLicExpiry),
+          dateStr: _vehicleInfo!.vehicleLicExpiry,
+        ),
+      );
+    }
+    if (_driverInfo != null) {
+      items.add(
+        _LicenseItem(
+          label: l.driverLicWarn,
+          days: _daysRemaining(_driverInfo!.licenseExpiry),
+          dateStr: _driverInfo!.licenseExpiry,
         ),
       );
     }
 
-    if (_vehicleInfo != null) {
-      addWarning(
-        l.operatingLicense,
-        _daysRemaining(_vehicleInfo!.operationExpiry),
-      );
-      addWarning(
-        l.vehicleLicWarn,
-        _daysRemaining(_vehicleInfo!.vehicleLicExpiry),
-      );
-    }
-    if (_driverInfo != null) {
-      addWarning(l.driverLicWarn, _daysRemaining(_driverInfo!.licenseExpiry));
-    }
-
+    final warnings = items.where((i) => i.days <= 15).toList();
     if (warnings.isEmpty) return const SizedBox.shrink();
 
     return Padding(
@@ -527,7 +507,58 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         horizontal: AppDimensions.spacingMedium(context),
         vertical: AppDimensions.spacingXSmall(context),
       ),
-      child: Column(children: warnings),
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Column(
+          children: warnings.map((item) {
+            final expired = item.days < 0;
+            final color = expired ? Colors.redAccent : Colors.orange;
+            final remainingText = expired
+                ? l.licenseExpiredWarn
+                : 'متبقي ${item.days.abs()} ${l.dayLabel}';
+
+            return Container(
+              width: double.infinity,
+              margin: EdgeInsets.only(
+                bottom: AppDimensions.spacingXSmall(context),
+              ),
+              padding: EdgeInsets.symmetric(
+                horizontal: AppDimensions.spacingMedium(context),
+                vertical: AppDimensions.spacingSmall(context),
+              ),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(
+                  AppDimensions.cardRadius(context),
+                ),
+                border: Border.all(color: color.withOpacity(0.6)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // يسار: "متبقي X يوم" أو "منتهية الصلاحية"
+                  Text(
+                    remainingText,
+                    style: GoogleFonts.cairo(
+                      color: color,
+                      fontWeight: FontWeight.bold,
+                      fontSize: AppDimensions.fontXSmall(context),
+                    ),
+                  ),
+                  // يمين: اسم الرخصة
+                  Text(
+                    item.label,
+                    style: GoogleFonts.cairo(
+                      color: color,
+                      fontSize: AppDimensions.fontXSmall(context),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ),
     );
   }
 
@@ -559,255 +590,8 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   }
 
   // ═══════════════════════════════════════════════
-  //  بطاقة إذن الحركة
+  //  تنبيه المخالفة
   // ═══════════════════════════════════════════════
-  Widget _buildMovementPermitCard() {
-    return Container(
-      margin: EdgeInsets.symmetric(
-        horizontal: AppDimensions.spacingMedium(context),
-        vertical: AppDimensions.spacingXSmall(context),
-      ),
-      padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppDimensions.cardRadius(context)),
-        border: Border.all(color: Colors.green.withOpacity(0.4)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // ← زر إنشاء الإذن
-          ElevatedButton.icon(
-            onPressed: () => _showPermitDialog(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.background,
-              padding: EdgeInsets.symmetric(
-                horizontal: AppDimensions.spacingMedium(context),
-                vertical: AppDimensions.spacingSmall(context),
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(
-                  AppDimensions.cardRadius(context),
-                ),
-              ),
-            ),
-            icon: Icon(
-              Icons.article_outlined,
-              size: AppDimensions.iconSmall(context),
-            ),
-            label: Text(
-              l.generatePermit,
-              style: GoogleFonts.cairo(
-                fontWeight: FontWeight.bold,
-                fontSize: AppDimensions.fontSmall(context),
-              ),
-            ),
-          ),
-
-          // ← عدد الخانات الشاغرة
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                l.movementPermit,
-                style: GoogleFonts.cairo(
-                  color: _isDark ? AppColors.textPrimary : Colors.black87,
-                  fontWeight: FontWeight.bold,
-                  fontSize: AppDimensions.fontSmall(context),
-                ),
-              ),
-              Row(
-                children: [
-                  Text(
-                    '$_availableSlots',
-                    style: GoogleFonts.cairo(
-                      color: Colors.green,
-                      fontSize: AppDimensions.fontXLarge(context),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(width: AppDimensions.spacingXSmall(context)),
-                  Text(
-                    l.availableSlots,
-                    style: GoogleFonts.cairo(
-                      color: _isDark ? AppColors.textSecondary : Colors.black54,
-                      fontSize: AppDimensions.fontXSmall(context),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ═══════════════════════════════════════════════
-  //  قائمة المركبات المسجّلة دخولاً
-  // ═══════════════════════════════════════════════
-  Widget _buildEnteredVehiclesCard() {
-    return Container(
-      margin: EdgeInsets.symmetric(
-        horizontal: AppDimensions.spacingMedium(context),
-        vertical: AppDimensions.spacingXSmall(context),
-      ),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppDimensions.cardRadius(context)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: AppDimensions.spacingMedium(context),
-              vertical: AppDimensions.spacingSmall(context),
-            ),
-            child: Text(
-              l.enteredVehicles,
-              style: GoogleFonts.cairo(
-                color: AppColors.primary,
-                fontWeight: FontWeight.bold,
-                fontSize: AppDimensions.fontMedium(context),
-              ),
-            ),
-          ),
-          Divider(color: _isDark ? Colors.white12 : Colors.black12, height: 1),
-          ..._enteredVehicles.map(
-            (v) => Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppDimensions.spacingMedium(context),
-                vertical: AppDimensions.spacingSmall(context),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    v.entryTime,
-                    style: GoogleFonts.cairo(
-                      color: _isDark ? AppColors.textSecondary : Colors.black54,
-                      fontSize: AppDimensions.fontXSmall(context),
-                    ),
-                  ),
-                  Text(
-                    v.vehicleNumber,
-                    style: GoogleFonts.cairo(
-                      color: _isDark ? AppColors.textPrimary : Colors.black87,
-                      fontWeight: FontWeight.w600,
-                      fontSize: AppDimensions.fontMedium(context),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ═══════════════════════════════════════════════
-  //  Dialogs
-  // ═══════════════════════════════════════════════
-  void _showPermitDialog() {
-    final vehicle = _vehicleInfo;
-    showDialog(
-      context: context,
-      builder: (_) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(
-              AppDimensions.cardRadius(context),
-            ),
-            side: BorderSide(color: AppColors.primary.withOpacity(0.4)),
-          ),
-          title: Text(
-            l.movementPermit,
-            style: GoogleFonts.cairo(
-              color: _isDark ? AppColors.textPrimary : Colors.black87,
-              fontWeight: FontWeight.bold,
-              fontSize: AppDimensions.fontLarge(context),
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _permitRow(
-                l.permitVehicle,
-                vehicle?.vehicleNumber ?? widget.idNumber,
-              ),
-              _permitRow(l.permitExitTime, _nowTime()),
-              _permitRow(l.permitExitGate, 'المخرج الرئيسي'),
-              _permitRow(l.permitLicenseNum, vehicle?.vehicleCode ?? '-'),
-              _permitRow(l.permitDestination, widget.lineTo),
-            ],
-          ),
-          actionsAlignment: MainAxisAlignment.center,
-          actions: [
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(
-                    AppDimensions.cardRadius(context),
-                  ),
-                ),
-              ),
-              child: Text(
-                l.close,
-                style: GoogleFonts.cairo(
-                  color: AppColors.background,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _permitRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        vertical: AppDimensions.spacingXSmall(context),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            value,
-            style: GoogleFonts.cairo(
-              color: _isDark ? AppColors.textPrimary : Colors.black87,
-              fontWeight: FontWeight.bold,
-              fontSize: AppDimensions.fontSmall(context),
-            ),
-          ),
-          Text(
-            label,
-            style: GoogleFonts.cairo(
-              color: _isDark ? AppColors.textSecondary : Colors.black54,
-              fontSize: AppDimensions.fontXSmall(context),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _nowTime() {
-    final now = DateTime.now();
-    final h = now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
-    final m = now.minute.toString().padLeft(2, '0');
-    final p = now.hour >= 12 ? 'م' : 'ص';
-    return '$h:$m $p';
-  }
-
   Widget _buildViolationWarning() {
     return Container(
       margin: EdgeInsets.fromLTRB(
@@ -822,43 +606,35 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         borderRadius: BorderRadius.circular(AppDimensions.cardRadius(context)),
         border: Border.all(color: Colors.redAccent, width: 1),
       ),
-      child: Row(
-        mainAxisAlignment: l.isArabic
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
-        children: [
-          if (!l.isArabic) ...[
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Row(
+          children: [
             Icon(
               Icons.block,
               color: Colors.redAccent,
               size: AppDimensions.iconLarge(context),
             ),
             SizedBox(width: AppDimensions.spacingSmall(context)),
-          ],
-          Expanded(
-            child: Text(
-              l.violationBlockWarn,
-              textAlign: l.isArabic ? TextAlign.right : TextAlign.left,
-              style: GoogleFonts.cairo(
-                color: Colors.redAccent,
-                fontSize: AppDimensions.fontSmall(context),
-                height: 1.6,
+            Expanded(
+              child: Text(
+                l.violationBlockWarn,
+                style: GoogleFonts.cairo(
+                  color: Colors.redAccent,
+                  fontSize: AppDimensions.fontSmall(context),
+                  height: 1.6,
+                ),
               ),
             ),
-          ),
-          if (l.isArabic) ...[
-            SizedBox(width: AppDimensions.spacingSmall(context)),
-            Icon(
-              Icons.block,
-              color: Colors.redAccent,
-              size: AppDimensions.iconLarge(context),
-            ),
           ],
-        ],
+        ),
       ),
     );
   }
 
+  // ═══════════════════════════════════════════════
+  //  بطاقة الرفض
+  // ═══════════════════════════════════════════════
   Widget _buildRejectedCard() {
     return Container(
       margin: EdgeInsets.all(AppDimensions.spacingMedium(context)),
@@ -899,6 +675,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     );
   }
 
+  // ── Helpers ──────────────────────────────────────
   Widget _buildCardLabel(String text) {
     return Expanded(
       child: Text(
@@ -935,4 +712,16 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       color: _isDark ? Colors.white12 : Colors.black12,
     );
   }
+}
+
+// helper data class
+class _LicenseItem {
+  final String label;
+  final int days;
+  final String dateStr;
+  const _LicenseItem({
+    required this.label,
+    required this.days,
+    required this.dateStr,
+  });
 }

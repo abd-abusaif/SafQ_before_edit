@@ -105,7 +105,10 @@ class VehicleInfoEntity {
   final String operationExpiry;
   final String vehicleLicExpiry;
   final String insuranceExpiry;
-  final bool loadingAllowed;
+
+  /// تاريخ انتهاء صلاحية التحميل (بدلاً من bool)
+  /// API: يُرجع حقل "loading_allowed_until" كـ ISO date string
+  final String loadingAllowedUntil;
 
   const VehicleInfoEntity({
     required this.vehicleNumber,
@@ -118,8 +121,17 @@ class VehicleInfoEntity {
     required this.operationExpiry,
     required this.vehicleLicExpiry,
     required this.insuranceExpiry,
-    required this.loadingAllowed,
+    required this.loadingAllowedUntil,
   });
+
+  /// هل التحميل مسموح حالياً (مشتق من التاريخ)
+  bool get loadingAllowed {
+    try {
+      return DateTime.parse(loadingAllowedUntil).isAfter(DateTime.now());
+    } catch (_) {
+      return false;
+    }
+  }
 
   factory VehicleInfoEntity.fromJson(Map<String, dynamic> json) {
     return VehicleInfoEntity(
@@ -133,7 +145,7 @@ class VehicleInfoEntity {
       operationExpiry: json['operation_expiry'] ?? '',
       vehicleLicExpiry: json['vehicle_lic_expiry'] ?? '',
       insuranceExpiry: json['insurance_expiry'] ?? '',
-      loadingAllowed: json['loading_allowed'] ?? true,
+      loadingAllowedUntil: json['loading_allowed_until'] ?? '',
     );
   }
 }

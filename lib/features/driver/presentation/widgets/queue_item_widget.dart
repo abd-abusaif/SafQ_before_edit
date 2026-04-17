@@ -9,13 +9,22 @@ class QueueItemWidget extends StatelessWidget {
   final QueueEntryEntity entry;
   final bool isCurrentDriver;
 
+  /// عدد الخانات المسموح بالتحميل (من API)
+  /// الأرقام من 1 إلى [allowedSlots] تُلوَّن بالأخضر
+  final int allowedSlots;
+
   const QueueItemWidget({
     super.key,
     required this.entry,
     required this.isCurrentDriver,
+    required this.allowedSlots,
   });
 
   Color _getPositionColor(int position) {
+    if (position <= allowedSlots) {
+      // مسموح بالتحميل — أخضر
+      return const Color(0xFF4CAF50);
+    }
     switch (position) {
       case 1:
         return const Color(0xFF4CAF50);
@@ -58,7 +67,7 @@ class QueueItemWidget extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // ← رقم الدور (ثابت يسار دائماً)
+          // ← رقم الدور
           Text(
             '${entry.queuePosition}',
             style: GoogleFonts.cairo(
@@ -69,10 +78,10 @@ class QueueItemWidget extends StatelessWidget {
           ),
           SizedBox(width: AppDimensions.spacingMedium(context)),
 
-          // ← اسم الخط
+          // ← رقم المركبة (بدلاً من اسم الخط)
           Expanded(
             child: Text(
-              '${entry.lineFrom} – ${entry.lineTo}',
+              entry.vehicleNumber,
               textAlign: TextAlign.center,
               style: GoogleFonts.cairo(
                 color: isDark ? AppColors.textPrimary : Colors.black87,
@@ -85,28 +94,13 @@ class QueueItemWidget extends StatelessWidget {
           ),
           SizedBox(width: AppDimensions.spacingMedium(context)),
 
-          // ← الوقت
-          Column(
-            crossAxisAlignment: l.isArabic
-                ? CrossAxisAlignment.end
-                : CrossAxisAlignment.start,
-            children: [
-              Text(
-                entry.entryTime,
-                style: GoogleFonts.cairo(
-                  color: isDark ? AppColors.textSecondary : Colors.black54,
-                  fontSize: AppDimensions.fontXSmall(context),
-                ),
-              ),
-              if (entry.exitTime != null)
-                Text(
-                  entry.exitTime!,
-                  style: GoogleFonts.cairo(
-                    color: isDark ? AppColors.textSecondary : Colors.black54,
-                    fontSize: AppDimensions.fontXSmall(context),
-                  ),
-                ),
-            ],
+          // ← وقت دخول المركبة فقط (عند تسجيلها بـ RFID)
+          Text(
+            entry.entryTime,
+            style: GoogleFonts.cairo(
+              color: isDark ? AppColors.textSecondary : Colors.black54,
+              fontSize: AppDimensions.fontXSmall(context),
+            ),
           ),
         ],
       ),
