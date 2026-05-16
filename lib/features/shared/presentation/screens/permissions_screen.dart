@@ -152,55 +152,50 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final crossAxis = l.isArabic
-        ? CrossAxisAlignment.end
-        : CrossAxisAlignment.start;
-
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        title: Text(
-          l.permissionsTitle,
-          style: GoogleFonts.cairo(
-            color: _isDark ? AppColors.textPrimary : Colors.black87,
-            fontWeight: FontWeight.bold,
-            fontSize: AppDimensions.fontLarge(context),
+    return Directionality(
+      textDirection: l.isArabic ? TextDirection.rtl : TextDirection.ltr,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          title: Text(
+            l.permissionsTitle,
+            style: GoogleFonts.cairo(
+              color: _isDark ? AppColors.textPrimary : Colors.black87,
+              fontWeight: FontWeight.bold,
+              fontSize: AppDimensions.fontLarge(context),
+            ),
           ),
+          centerTitle: true,
+          automaticallyImplyLeading: false,
         ),
-        centerTitle: true,
-        automaticallyImplyLeading: false,
-      ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            )
-          : RefreshIndicator(
-              color: AppColors.primary,
-              onRefresh: _loadData,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
-                child: Column(
-                  crossAxisAlignment: crossAxis,
-                  children: [
-                    _buildRequestCard(),
-                    SizedBox(height: AppDimensions.spacingLarge(context)),
-                    _buildMyPermissions(),
-                  ],
+        body: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              )
+            : RefreshIndicator(
+                color: AppColors.primary,
+                onRefresh: _loadData,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
+                  child: Column(
+                    children: [
+                      _buildRequestCard(),
+                      SizedBox(height: AppDimensions.spacingLarge(context)),
+                      _buildMyPermissions(),
+                    ],
+                  ),
                 ),
               ),
-            ),
+      ),
     );
   }
 
   // ═══════════════════════════════════════════════
-  //  بطاقة إرسال الطلب — حقل نص حر
+  //  بطاقة إرسال الطلب
   // ═══════════════════════════════════════════════
   Widget _buildRequestCard() {
-    final textAlign = l.isArabic ? TextAlign.right : TextAlign.left;
-    final textDir = l.isArabic ? TextDirection.rtl : TextDirection.ltr;
-
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -209,11 +204,9 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
         border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 1),
       ),
       child: Column(
-        crossAxisAlignment: l.isArabic
-            ? CrossAxisAlignment.end
-            : CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header
+          // ── رأس البطاقة ───────────────────────────────
           Container(
             width: double.infinity,
             padding: EdgeInsets.symmetric(
@@ -228,50 +221,55 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
               ),
             ),
             child: Row(
+              textDirection: TextDirection.ltr,
               mainAxisAlignment: l.isArabic
                   ? MainAxisAlignment.end
                   : MainAxisAlignment.start,
-              children: [
-                if (!l.isArabic) ...[
-                  Icon(
-                    Icons.add_circle_outline,
-                    color: AppColors.primary,
-                    size: AppDimensions.iconMedium(context),
-                  ),
-                  SizedBox(width: AppDimensions.spacingSmall(context)),
-                ],
-                Text(
-                  l.newPermission,
-                  style: GoogleFonts.cairo(
-                    color: AppColors.primary,
-                    fontSize: AppDimensions.fontMedium(context),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (l.isArabic) ...[
-                  SizedBox(width: AppDimensions.spacingSmall(context)),
-                  Icon(
-                    Icons.add_circle_outline,
-                    color: AppColors.primary,
-                    size: AppDimensions.iconMedium(context),
-                  ),
-                ],
-              ],
+              children: l.isArabic
+                  ? [
+                      Text(
+                        l.newPermission,
+                        style: GoogleFonts.cairo(
+                          color: AppColors.primary,
+                          fontSize: AppDimensions.fontMedium(context),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(width: AppDimensions.spacingSmall(context)),
+                      Icon(
+                        Icons.add_circle_outline,
+                        color: AppColors.primary,
+                        size: AppDimensions.iconMedium(context),
+                      ),
+                    ]
+                  : [
+                      Icon(
+                        Icons.add_circle_outline,
+                        color: AppColors.primary,
+                        size: AppDimensions.iconMedium(context),
+                      ),
+                      SizedBox(width: AppDimensions.spacingSmall(context)),
+                      Text(
+                        l.newPermission,
+                        style: GoogleFonts.cairo(
+                          color: AppColors.primary,
+                          fontSize: AppDimensions.fontMedium(context),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
             ),
           ),
 
-          // Body — حقل نص حر
+          // ── محتوى البطاقة ─────────────────────────────
           Padding(
             padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
             child: Column(
-              crossAxisAlignment: l.isArabic
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Label
                 Text(
                   l.permissionReason,
-                  textAlign: textAlign,
                   style: GoogleFonts.cairo(
                     color: _isDark ? AppColors.textSecondary : Colors.black54,
                     fontSize: AppDimensions.fontSmall(context),
@@ -279,11 +277,13 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                 ),
                 SizedBox(height: AppDimensions.spacingSmall(context)),
 
-                // ← حقل النص الحر (بدل dropdown)
+                // حقل النص الحر
                 TextField(
                   controller: _reasonCtrl,
-                  textAlign: textAlign,
-                  textDirection: textDir,
+                  textDirection: l.isArabic
+                      ? TextDirection.rtl
+                      : TextDirection.ltr,
+                  textAlign: l.isArabic ? TextAlign.right : TextAlign.left,
                   maxLines: 4,
                   style: GoogleFonts.cairo(
                     color: _isDark ? AppColors.textPrimary : Colors.black87,
@@ -328,16 +328,17 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                 ),
                 SizedBox(height: AppDimensions.spacingSmall(context)),
 
-                // تاريخ الطلب
+                // تاريخ الطلب — Label
                 Text(
                   l.requestDate,
-                  textAlign: textAlign,
                   style: GoogleFonts.cairo(
                     color: _isDark ? AppColors.textSecondary : Colors.black54,
                     fontSize: AppDimensions.fontSmall(context),
                   ),
                 ),
                 SizedBox(height: AppDimensions.spacingXSmall(context)),
+
+                // تاريخ الطلب — قيمة
                 Container(
                   width: double.infinity,
                   padding: EdgeInsets.symmetric(
@@ -354,6 +355,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                     ),
                   ),
                   child: Row(
+                    textDirection: TextDirection.ltr,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Icon(
@@ -416,40 +418,47 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
   // ═══════════════════════════════════════════════
   Widget _buildMyPermissions() {
     return Column(
-      crossAxisAlignment: l.isArabic
-          ? CrossAxisAlignment.end
-          : CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // عنوان القسم
         Row(
+          textDirection: TextDirection.ltr,
           mainAxisAlignment: l.isArabic
               ? MainAxisAlignment.end
               : MainAxisAlignment.start,
-          children: [
-            if (!l.isArabic) ...[
-              Icon(
-                Icons.history,
-                color: AppColors.primary,
-                size: AppDimensions.iconMedium(context),
-              ),
-              SizedBox(width: AppDimensions.spacingSmall(context)),
-            ],
-            Text(
-              l.myPermissions,
-              style: GoogleFonts.cairo(
-                color: _isDark ? AppColors.textPrimary : Colors.black87,
-                fontSize: AppDimensions.fontLarge(context),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            if (l.isArabic) ...[
-              SizedBox(width: AppDimensions.spacingSmall(context)),
-              Icon(
-                Icons.history,
-                color: AppColors.primary,
-                size: AppDimensions.iconMedium(context),
-              ),
-            ],
-          ],
+          children: l.isArabic
+              ? [
+                  Text(
+                    l.myPermissions,
+                    style: GoogleFonts.cairo(
+                      color: _isDark ? AppColors.textPrimary : Colors.black87,
+                      fontSize: AppDimensions.fontLarge(context),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(width: AppDimensions.spacingSmall(context)),
+                  Icon(
+                    Icons.history,
+                    color: AppColors.primary,
+                    size: AppDimensions.iconMedium(context),
+                  ),
+                ]
+              : [
+                  Icon(
+                    Icons.history,
+                    color: AppColors.primary,
+                    size: AppDimensions.iconMedium(context),
+                  ),
+                  SizedBox(width: AppDimensions.spacingSmall(context)),
+                  Text(
+                    l.myPermissions,
+                    style: GoogleFonts.cairo(
+                      color: _isDark ? AppColors.textPrimary : Colors.black87,
+                      fontSize: AppDimensions.fontLarge(context),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
         ),
         SizedBox(height: AppDimensions.spacingSmall(context)),
         _permissions.isEmpty
@@ -475,6 +484,9 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
     );
   }
 
+  // ═══════════════════════════════════════════════
+  //  بطاقة طلب واحد
+  // ═══════════════════════════════════════════════
   Widget _buildPermissionCard(PermissionEntity permission) {
     Color statusColor;
     String statusLabel;
@@ -505,8 +517,9 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
         border: Border.all(color: statusColor.withOpacity(0.3), width: 1),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header
+          // ── رأس البطاقة: الحالة + رقم الطلب ──────────
           Container(
             width: double.infinity,
             padding: EdgeInsets.symmetric(
@@ -521,16 +534,21 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
               ),
             ),
             child: Row(
+              textDirection: TextDirection.ltr,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                // رقم الطلب — دائماً يسار بـ ltr
+                Text(
+                  '#${permission.id}',
+                  style: GoogleFonts.cairo(
+                    color: _isDark ? AppColors.textSecondary : Colors.black54,
+                    fontSize: AppDimensions.fontXSmall(context),
+                  ),
+                ),
+                // الحالة — دائماً يمين
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      statusIcon,
-                      color: statusColor,
-                      size: AppDimensions.iconSmall(context),
-                    ),
-                    SizedBox(width: AppDimensions.spacingXSmall(context)),
                     Text(
                       statusLabel,
                       style: GoogleFonts.cairo(
@@ -539,46 +557,64 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    SizedBox(width: AppDimensions.spacingXSmall(context)),
+                    Icon(
+                      statusIcon,
+                      color: statusColor,
+                      size: AppDimensions.iconSmall(context),
+                    ),
                   ],
-                ),
-                Text(
-                  'طلب #${permission.id}',
-                  style: GoogleFonts.cairo(
-                    color: _isDark ? AppColors.textSecondary : Colors.black54,
-                    fontSize: AppDimensions.fontXSmall(context),
-                  ),
                 ),
               ],
             ),
           ),
 
-          // Body
+          // ── محتوى البطاقة ─────────────────────────────
           Padding(
             padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
             child: Column(
-              crossAxisAlignment: l.isArabic
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // ← سبب الطلب (نص حر)
+                // سبب الطلب
                 Text(
                   permission.reason,
-                  textAlign: l.isArabic ? TextAlign.right : TextAlign.left,
                   style: GoogleFonts.cairo(
                     color: _isDark ? AppColors.textPrimary : Colors.black87,
                     fontSize: AppDimensions.fontMedium(context),
                   ),
                 ),
                 SizedBox(height: AppDimensions.spacingXSmall(context)),
-                Text(
-                  '📅 ${permission.requestDate}',
-                  style: GoogleFonts.cairo(
-                    color: _isDark ? AppColors.textSecondary : Colors.black54,
-                    fontSize: AppDimensions.fontXSmall(context),
+
+                // التاريخ — دائماً ltr (رقم)
+                Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Row(
+                    mainAxisAlignment: l.isArabic
+                        ? MainAxisAlignment.end
+                        : MainAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        color: _isDark
+                            ? AppColors.textSecondary
+                            : Colors.black54,
+                        size: AppDimensions.iconSmall(context),
+                      ),
+                      SizedBox(width: AppDimensions.spacingXSmall(context)),
+                      Text(
+                        permission.requestDate,
+                        style: GoogleFonts.cairo(
+                          color: _isDark
+                              ? AppColors.textSecondary
+                              : Colors.black54,
+                          fontSize: AppDimensions.fontXSmall(context),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 
-                // ← سبب الرفض من المشرف
+                // سبب الرفض
                 if (permission.status == 'rejected' &&
                     permission.rejectionReason != null) ...[
                   SizedBox(height: AppDimensions.spacingSmall(context)),
@@ -598,58 +634,75 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                       ),
                     ),
                     child: Row(
+                      textDirection: TextDirection.ltr,
                       mainAxisAlignment: l.isArabic
                           ? MainAxisAlignment.end
                           : MainAxisAlignment.start,
-                      children: [
-                        if (!l.isArabic) ...[
-                          Icon(
-                            Icons.info_outline,
-                            color: Colors.redAccent,
-                            size: AppDimensions.iconSmall(context),
-                          ),
-                          SizedBox(width: AppDimensions.spacingXSmall(context)),
-                          Text(
-                            l.rejectionReason,
-                            style: GoogleFonts.cairo(
-                              color: Colors.redAccent,
-                              fontSize: AppDimensions.fontXSmall(context),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(width: AppDimensions.spacingXSmall(context)),
-                        ],
-                        Expanded(
-                          child: Text(
-                            permission.rejectionReason!,
-                            textAlign: l.isArabic
-                                ? TextAlign.right
-                                : TextAlign.left,
-                            style: GoogleFonts.cairo(
-                              color: Colors.redAccent,
-                              fontSize: AppDimensions.fontXSmall(context),
-                              height: 1.5,
-                            ),
-                          ),
-                        ),
-                        if (l.isArabic) ...[
-                          SizedBox(width: AppDimensions.spacingXSmall(context)),
-                          Icon(
-                            Icons.info_outline,
-                            color: Colors.redAccent,
-                            size: AppDimensions.iconSmall(context),
-                          ),
-                          SizedBox(width: AppDimensions.spacingXSmall(context)),
-                          Text(
-                            l.rejectionReason,
-                            style: GoogleFonts.cairo(
-                              color: Colors.redAccent,
-                              fontSize: AppDimensions.fontXSmall(context),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ],
+                      children: l.isArabic
+                          ? [
+                              Flexible(
+                                child: Text(
+                                  permission.rejectionReason!,
+                                  textAlign: TextAlign.right,
+                                  style: GoogleFonts.cairo(
+                                    color: Colors.redAccent,
+                                    fontSize: AppDimensions.fontXSmall(context),
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                width: AppDimensions.spacingXSmall(context),
+                              ),
+                              Icon(
+                                Icons.info_outline,
+                                color: Colors.redAccent,
+                                size: AppDimensions.iconSmall(context),
+                              ),
+                              SizedBox(
+                                width: AppDimensions.spacingXSmall(context),
+                              ),
+                              Text(
+                                l.rejectionReason,
+                                style: GoogleFonts.cairo(
+                                  color: Colors.redAccent,
+                                  fontSize: AppDimensions.fontXSmall(context),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ]
+                          : [
+                              Icon(
+                                Icons.info_outline,
+                                color: Colors.redAccent,
+                                size: AppDimensions.iconSmall(context),
+                              ),
+                              SizedBox(
+                                width: AppDimensions.spacingXSmall(context),
+                              ),
+                              Text(
+                                l.rejectionReason,
+                                style: GoogleFonts.cairo(
+                                  color: Colors.redAccent,
+                                  fontSize: AppDimensions.fontXSmall(context),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(
+                                width: AppDimensions.spacingXSmall(context),
+                              ),
+                              Flexible(
+                                child: Text(
+                                  permission.rejectionReason!,
+                                  textAlign: TextAlign.left,
+                                  style: GoogleFonts.cairo(
+                                    color: Colors.redAccent,
+                                    fontSize: AppDimensions.fontXSmall(context),
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ],
                     ),
                   ),
                 ],

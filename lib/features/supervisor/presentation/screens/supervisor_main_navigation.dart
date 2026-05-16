@@ -11,6 +11,7 @@ import 'supervisor_notifications_screen.dart';
 import 'supervisor_profile_screen.dart';
 import 'supervisor_permissions_screen.dart';
 import 'supervisor_lines_screen.dart';
+import 'supervisor_external_requests_screen.dart';
 
 class SupervisorMainNavigation extends StatefulWidget {
   final String supervisorName;
@@ -49,6 +50,7 @@ class _SupervisorMainNavigationState extends State<SupervisorMainNavigation> {
       ),
       const SupervisorPermissionsScreen(),
       SupervisorLinesScreen(idNumber: widget.idNumber),
+      const SupervisorExternalRequestsScreen(),
     ];
   }
 
@@ -162,6 +164,11 @@ class _SupervisorMainNavigationState extends State<SupervisorMainNavigation> {
                     4,
                     Icons.directions_bus_outlined,
                     l.translate('my_lines'),
+                  ),
+                  _navItem(
+                    5,
+                    Icons.inbox_outlined,
+                    l.translate('external_requests_nav'),
                   ),
                   _logoutItem(),
                 ],

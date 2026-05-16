@@ -296,4 +296,41 @@ const Map<String, String> arTranslations = {
   'exit': 'خروج',
   'sign_out': 'تسجيل الخروج',
   'sign_out_question': 'هل تريد تسجيل الخروج؟',
+
+  // ── External Requests (Supervisor) ───────────────
+  'external_requests_title': 'الطلبات الخارجية',
+  'external_requests_nav': 'الطلبات',
+  'no_external_requests': 'لا توجد طلبات خارجية',
+  'ext_type_passengers': 'ركاب',
+  'ext_type_parcel': 'طرد',
+  'requester_name': 'اسم مقدم الطلب',
+  'requester_phone': 'رقم الهاتف',
+  'requester_location': 'موقع الراكب',
+  'passenger_count': 'عدد الركاب',
+  'passengers_unit': 'راكب',
+  'parcel_name': 'اسم الطرد',
+  'parcel_details_label': 'تفاصيل الطرد',
+  'destination_label': 'الوجهة',
+  'details_label': 'تفاصيل',
+  'archived_tab': 'المؤرشفة',
+  'ext_req_approved_snack': 'تم قبول الطلب وإشعار الراكب',
+  'ext_req_rejected_snack': 'تم رفض الطلب وإشعار الراكب',
+
+  // ── Exception (Supervisor) ────────────────────────
+  'exception_btn': 'استثناء',
+  'exception_badge': 'استثناء',
+  'exception_confirm_title': 'تأكيد الاستثناء',
+  'exception_confirm_msg': 'هل تريد منح استثناء وأمر حركة للسائق',
+  'exception_granted_snack': 'تم منح الاستثناء لـ',
+
+  // ── Movement Order (Driver) ───────────────────────
+  'movement_order_title': 'أمر الحركة',
+  'movement_order_nav': 'أمر الحركة',
+  'no_movement_order': 'لا يوجد أمر حركة',
+  'no_movement_order_msg':
+      'لم يصدر بحقك أمر حركة حتى الآن.\\nانتظر إشعار المشرف.',
+  'order_line_number': 'رقم الخط',
+  'departure_date': 'تاريخ المغادرة',
+  'departure_time': 'وقت المغادرة',
+  'tap_for_details': 'اضغط لعرض التفاصيل',
 };

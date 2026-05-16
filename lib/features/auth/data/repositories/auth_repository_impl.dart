@@ -19,7 +19,7 @@ class AuthRepositoryImpl implements AuthRepository {
       case 'driver':
         return DriverEntity(
           id: idNumber,
-          username: 'عبدالرحمن أبو سيف', // ← اسمك
+          username: 'عبدالرحمن أبو سيف',
           licenseNumber: 'LIC-001',
         );
       case 'supervisor':

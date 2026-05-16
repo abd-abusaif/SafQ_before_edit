@@ -70,6 +70,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  String _formatDate(String dateStr) {
+    try {
+      final dt = DateTime.parse(dateStr);
+      return '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return dateStr;
+    }
+  }
+
   String get _initials {
     final parts = widget.driverName.trim().split(' ');
     if (parts.length >= 2) return '${parts.first[0]}${parts.last[0]}';
@@ -263,11 +272,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             value: _vehicleInfo!.chassisNumber,
                           ),
                           _InfoItem(
-                            icon: Icons.numbers_outlined,
-                            label: l.chassisConfirm,
-                            value: _vehicleInfo!.chassisNumber,
-                          ),
-                          _InfoItem(
                             icon: Icons.factory_outlined,
                             label: l.company,
                             value: _vehicleInfo!.company,
@@ -305,15 +309,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             value: _vehicleInfo!.insuranceExpiry,
                             isDate: true,
                           ),
-                          // ← حالة السماح بالتحميل
+                          // ← حالة السماح بالتحميل: يعرض التاريخ المحدد من الأدمن
                           _InfoItem(
                             icon: _vehicleInfo!.loadingAllowed
                                 ? Icons.check_circle_outline
                                 : Icons.block,
                             label: l.loadingAllowed,
-                            value: _vehicleInfo!.loadingAllowed
-                                ? l.loadingYes
-                                : l.loadingNo,
+                            value: _vehicleInfo!.loadingAllowedUntil.isNotEmpty
+                                ? _formatDate(_vehicleInfo!.loadingAllowedUntil)
+                                : (l.loadingNo),
+                            isDate:
+                                _vehicleInfo!.loadingAllowedUntil.isNotEmpty,
                             customColor: _vehicleInfo!.loadingAllowed
                                 ? Colors.green
                                 : Colors.redAccent,

@@ -2,40 +2,17 @@
 
 import '../../domain/entities/permission_entity.dart';
 import '../../domain/repositories/permission_repository.dart';
+import '../../../../core/stores/shared_permission_store.dart';
+import './driver_profile_repository_impl.dart';
 
 class PermissionRepositoryImpl implements PermissionRepository {
-  static final List<PermissionEntity> _mockPermissions = [
-    PermissionEntity(
-      id: '1',
-      reason: 'موعد طبي طارئ في مستشفى الخليل الحكومي',
-      requestDate: '2026-02-15',
-      status: 'approved',
-      createdAt: DateTime.now().subtract(const Duration(days: 3)),
-    ),
-    PermissionEntity(
-      id: '2',
-      reason: 'إجراءات تجديد رخصة القيادة في مديرية المرور',
-      requestDate: '2026-02-18',
-      status: 'rejected',
-      rejectionReason: 'الوقت المحدد غير متاح، يرجى إعادة الطلب لاحقاً',
-      createdAt: DateTime.now().subtract(const Duration(days: 1)),
-    ),
-    PermissionEntity(
-      id: '3',
-      reason: 'مراسم عزاء عائلية',
-      requestDate: '2026-03-18',
-      status: 'pending',
-      createdAt: DateTime.now(),
-    ),
-  ];
+  final _profileRepo = DriverProfileRepositoryImpl();
 
   @override
   Future<List<PermissionEntity>> getMyPermissions(String idNumber) async {
     // API: GET /api/driver/permissions/$idNumber
-    await Future.delayed(const Duration(milliseconds: 500));
-    final sorted = List<PermissionEntity>.from(_mockPermissions)
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return sorted;
+    await Future.delayed(const Duration(milliseconds: 400));
+    return SharedPermissionStore.getDriverPermissions(idNumber);
   }
 
   @override
@@ -43,18 +20,37 @@ class PermissionRepositoryImpl implements PermissionRepository {
     required String idNumber,
     required String reason,
     required String requestDate,
+    String? duration,
   }) async {
     // API: POST /api/driver/permissions
-    // body: { "id_number": idNumber, "reason": reason, "request_date": requestDate }
-    await Future.delayed(const Duration(seconds: 1));
-    _mockPermissions.add(
-      PermissionEntity(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+    // body: { "id_number": idNumber, "reason": reason, "request_date": requestDate, "duration": duration }
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    // جلب معلومات السائق لإرفاقها بالإذن (الاسم + رقم السيارة + اسم الخط)
+    try {
+      final driverInfo = await _profileRepo.getDriverInfo(idNumber);
+      final vehicleInfo = await _profileRepo.getVehicleInfo(idNumber);
+      final lineInfo = await _profileRepo.getLineInfo(idNumber);
+
+      SharedPermissionStore.submitPermission(
+        idNumber: idNumber,
+        driverName: driverInfo.fullName,
+        vehiclePlate: vehicleInfo.vehicleNumber,
+        lineName: lineInfo.lineName,
         reason: reason,
         requestDate: requestDate,
-        status: 'pending',
-        createdAt: DateTime.now(),
-      ),
-    );
+        duration: duration ?? 'يوم واحد',
+      );
+    } catch (_) {
+      SharedPermissionStore.submitPermission(
+        idNumber: idNumber,
+        driverName: 'سائق',
+        vehiclePlate: '-',
+        lineName: '-',
+        reason: reason,
+        requestDate: requestDate,
+        duration: duration ?? 'يوم واحد',
+      );
+    }
   }
 }

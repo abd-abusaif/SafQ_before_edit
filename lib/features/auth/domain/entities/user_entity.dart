@@ -1,6 +1,5 @@
 // domain/entities/user_entity.dart
 
-// Base class - مبدأ الوراثة
 abstract class UserEntity {
   final String id;
   final String username;

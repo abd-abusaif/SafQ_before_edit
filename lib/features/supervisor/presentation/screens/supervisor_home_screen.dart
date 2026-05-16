@@ -505,98 +505,246 @@ class _SupervisorHomeScreenState extends State<SupervisorHomeScreen> {
     );
   }
 
+// and replace _buildQueueItem
+
+  Future<void> _grantException(SupervisorVehicleEntity vehicle) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: l.isArabic ? TextDirection.rtl : TextDirection.ltr,
+        child: AlertDialog(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(AppDimensions.cardRadius(context)),
+            side: const BorderSide(color: Colors.orange, width: 1),
+          ),
+          icon: Icon(Icons.star_outline,
+              color: Colors.orange,
+              size: AppDimensions.iconXLarge(context)),
+          title: Text(
+            l.translate('exception_confirm_title'),
+            textAlign: TextAlign.center,
+            style: GoogleFonts.cairo(
+              color: _isDark ? AppColors.textPrimary : Colors.black87,
+              fontWeight: FontWeight.bold,
+              fontSize: AppDimensions.fontLarge(context),
+            ),
+          ),
+          content: Text(
+            '${l.translate("exception_confirm_msg")} ${vehicle.driverName}؟',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.cairo(
+              color: _isDark ? AppColors.textSecondary : Colors.black54,
+              fontSize: AppDimensions.fontMedium(context),
+              height: 1.6,
+            ),
+          ),
+          actionsAlignment: MainAxisAlignment.spaceEvenly,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l.cancel,
+                  style: GoogleFonts.cairo(
+                      color:
+                          _isDark ? AppColors.textSecondary : Colors.black54)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                      AppDimensions.cardRadius(context)),
+                ),
+              ),
+              child: Text(l.translate('exception_btn'),
+                  style: GoogleFonts.cairo(color: Colors.white,
+                      fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    await _repo.grantException(vehicle.vehiclePlate);
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${l.translate("exception_granted_snack")} ${vehicle.driverName}',
+          style: GoogleFonts.cairo(),
+        ),
+        backgroundColor: Colors.green,
+      ),
+    );
+    _loadQueue();
+  }
+
   Widget _buildQueueItem(SupervisorVehicleEntity v) {
+    // اللون: استثناء أو مقبول → أخضر | غير ذلك → primary
+    final isGreen = v.isException || v.isApproved;
+    final positionColor = isGreen ? Colors.green : AppColors.primary;
+
     return Container(
       padding: EdgeInsets.all(AppDimensions.spacingMedium(context)),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(AppDimensions.cardRadius(context)),
         border: Border.all(
-          color: AppColors.primary.withOpacity(0.25),
+          color: positionColor.withOpacity(0.35),
           width: 1,
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // رقم الدور - في اليسار للـ RTL
-          Container(
-            width: AppDimensions.avatarSmall(context) * 0.75,
-            height: AppDimensions.avatarSmall(context) * 0.75,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.primary.withOpacity(0.15),
-              border: Border.all(color: AppColors.primary.withOpacity(0.5)),
-            ),
-            child: Center(
-              child: Directionality(
-                textDirection: TextDirection.ltr,
-                child: Text(
-                  '#${v.queuePosition}',
-                  style: GoogleFonts.cairo(
-                    color: AppColors.primary,
-                    fontSize: AppDimensions.fontXSmall(context),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          // معلومات السائق
-          Column(
-            crossAxisAlignment: l.isArabic
-                ? CrossAxisAlignment.end
-                : CrossAxisAlignment.start,
+          Row(
+            textDirection: TextDirection.ltr,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                v.driverName,
-                style: GoogleFonts.cairo(
-                  color: _isDark ? AppColors.textPrimary : Colors.black87,
-                  fontSize: AppDimensions.fontMedium(context),
-                  fontWeight: FontWeight.bold,
+              // رقم الدور — يسار
+              Container(
+                width: AppDimensions.avatarSmall(context) * 0.75,
+                height: AppDimensions.avatarSmall(context) * 0.75,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: positionColor.withOpacity(0.15),
+                  border: Border.all(color: positionColor.withOpacity(0.5)),
                 ),
-              ),
-              SizedBox(height: AppDimensions.spacingXSmall(context)),
-              Row(
-                children: [
-                  // وقت الدخول LTR
-                  Directionality(
+                child: Center(
+                  child: Directionality(
                     textDirection: TextDirection.ltr,
                     child: Text(
-                      v.entryTime,
+                      '#${v.queuePosition}',
                       style: GoogleFonts.cairo(
-                        color: _isDark
-                            ? AppColors.textSecondary
-                            : Colors.black54,
+                        color: positionColor,
                         fontSize: AppDimensions.fontXSmall(context),
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppDimensions.spacingSmall(context),
-                    ),
-                    child: Container(
-                      width: 3,
-                      height: 3,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _isDark ? Colors.white38 : Colors.black38,
-                      ),
-                    ),
-                  ),
+                ),
+              ),
+              // معلومات السائق — يمين
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
                   Text(
-                    v.vehiclePlate,
+                    v.driverName,
                     style: GoogleFonts.cairo(
-                      color: _isDark ? AppColors.textSecondary : Colors.black54,
-                      fontSize: AppDimensions.fontXSmall(context),
-                      fontWeight: FontWeight.w600,
+                      color: _isDark ? AppColors.textPrimary : Colors.black87,
+                      fontSize: AppDimensions.fontMedium(context),
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
+                  SizedBox(height: AppDimensions.spacingXSmall(context)),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Directionality(
+                        textDirection: TextDirection.ltr,
+                        child: Text(
+                          v.entryTime,
+                          style: GoogleFonts.cairo(
+                            color: _isDark
+                                ? AppColors.textSecondary
+                                : Colors.black54,
+                            fontSize: AppDimensions.fontXSmall(context),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: AppDimensions.spacingSmall(context)),
+                        child: Container(
+                          width: 3,
+                          height: 3,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _isDark ? Colors.white38 : Colors.black38,
+                          ),
+                        ),
+                      ),
+                      Directionality(
+                        textDirection: TextDirection.ltr,
+                        child: Text(
+                          v.vehiclePlate,
+                          style: GoogleFonts.cairo(
+                            color: _isDark
+                                ? AppColors.textSecondary
+                                : Colors.black54,
+                            fontSize: AppDimensions.fontXSmall(context),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // شارة الاستثناء
+                  if (v.isException) ...[
+                    SizedBox(height: AppDimensions.spacingXSmall(context)),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: AppDimensions.spacingSmall(context),
+                          vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                            color: Colors.orange.withOpacity(0.5), width: 0.8),
+                      ),
+                      child: Text(
+                        l.translate('exception_badge'),
+                        style: GoogleFonts.cairo(
+                          color: Colors.orange,
+                          fontSize: AppDimensions.fontXSmall(context),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ],
           ),
+
+          // ── زر الاستثناء ─────────────────────────────
+          if (!v.isException) ...[
+            SizedBox(height: AppDimensions.spacingSmall(context)),
+            Divider(
+                color: _isDark ? Colors.white12 : Colors.black12,
+                height: 1),
+            SizedBox(height: AppDimensions.spacingSmall(context)),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => _grantException(v),
+                icon: Icon(Icons.star_outline,
+                    color: Colors.orange,
+                    size: AppDimensions.iconSmall(context)),
+                label: Text(
+                  l.translate('exception_btn'),
+                  style: GoogleFonts.cairo(
+                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                    fontSize: AppDimensions.fontSmall(context),
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.orange),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                        AppDimensions.cardRadius(context)),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

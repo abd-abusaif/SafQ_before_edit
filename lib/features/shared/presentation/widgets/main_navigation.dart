@@ -9,6 +9,7 @@ import '../../../../core/utils/session_manager.dart';
 import '../screens/profile_screen.dart';
 import '../screens/notifications_screen.dart';
 import '../screens/permissions_screen.dart';
+import '../../../driver/presentation/screens/movement_order_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   final Widget homeScreen;
@@ -50,6 +51,7 @@ class _MainNavigationState extends State<MainNavigation> {
         currentPassword: widget.currentPassword,
       ),
       const PermissionsScreen(),
+      MovementOrderScreen(idNumber: widget.idNumber),
     ];
   }
 
@@ -159,6 +161,11 @@ class _MainNavigationState extends State<MainNavigation> {
                   _navItem(1, Icons.notifications_outlined, l.notifications),
                   _navItem(2, Icons.person_outline, l.translate('my_account')),
                   _navItem(3, Icons.lock_clock_outlined, l.permissions),
+                  _navItem(
+                    4,
+                    Icons.directions_bus_outlined,
+                    l.translate('movement_order_nav'),
+                  ),
                   _logoutItem(),
                 ],
               ),

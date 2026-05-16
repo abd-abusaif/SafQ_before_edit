@@ -7,6 +7,7 @@ import '../../domain/entities/supervisor_permission_entity.dart';
 import '../../domain/entities/rejected_vehicle_notification_entity.dart';
 import '../../domain/entities/line_detail_entity.dart';
 import '../../domain/repositories/supervisor_repository.dart';
+import '../../../../core/stores/shared_permission_store.dart';
 
 // ── Shared store للإشعارات (محاكاة push notification) ──────────────────────
 class _NotificationStore {
@@ -40,74 +41,9 @@ class _NotificationStore {
   }
 }
 
-// ── Shared store للأذونات ────────────────────────────────────────────────────
-class _PermissionStore {
-  static final List<SupervisorPermissionEntity> _list = [
-    SupervisorPermissionEntity(
-      id: 'p1',
-      driverName: 'أحمد محمد السعيد',
-      vehiclePlate: 'أ ب ج 1234',
-      lineName: 'الخليل / دورا',
-      duration: 'يوم واحد',
-      permissionType: 'موعد طبي طارئ',
-      requestDate: '2026-04-11',
-      status: 'pending',
-      createdAt: DateTime.now().subtract(const Duration(minutes: 30)),
-    ),
-    SupervisorPermissionEntity(
-      id: 'p2',
-      driverName: 'محمود علي حسن',
-      vehiclePlate: 'ز ح ط 9012',
-      lineName: 'الخليل / دورا',
-      duration: 'نصف يوم',
-      permissionType: 'تجديد رخصة القيادة',
-      requestDate: '2026-04-12',
-      status: 'pending',
-      createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-    ),
-    SupervisorPermissionEntity(
-      id: 'p3',
-      driverName: 'يوسف حسن عمر',
-      vehiclePlate: 'م ن س 6677',
-      lineName: 'الخليل / بيت لحم',
-      duration: 'يومان',
-      permissionType: 'مراسم عزاء عائلية',
-      requestDate: '2026-04-10',
-      status: 'approved',
-      createdAt: DateTime.now().subtract(const Duration(days: 1)),
-    ),
-    SupervisorPermissionEntity(
-      id: 'p4',
-      driverName: 'سامر يوسف',
-      vehiclePlate: 'ك ل م 3344',
-      lineName: 'الخليل / بيت لحم',
-      duration: '3 أيام',
-      permissionType: 'إجازة اضطرارية',
-      requestDate: '2026-04-09',
-      status: 'rejected',
-      rejectionNote: 'لا يوجد سائق بديل في هذا التوقيت',
-      createdAt: DateTime.now().subtract(const Duration(days: 2)),
-    ),
-  ];
-
-  static List<SupervisorPermissionEntity> get pending =>
-      _list.where((p) => p.status == 'pending').toList();
-
-  static List<SupervisorPermissionEntity> get archived =>
-      _list.where((p) => p.status != 'pending').toList();
-
-  static void approve(String id) {
-    final idx = _list.indexWhere((p) => p.id == id);
-    if (idx != -1) _list[idx] = _list[idx].copyWith(status: 'approved');
-  }
-
-  static void reject(String id, String note) {
-    final idx = _list.indexWhere((p) => p.id == id);
-    if (idx != -1) {
-      _list[idx] = _list[idx].copyWith(status: 'rejected', rejectionNote: note);
-    }
-  }
-}
+// ── ملاحظة: الأذونات تُدار الآن عبر SharedPermissionStore المشترك ────────────
+// السائق يرسل الإذن ← SharedPermissionStore ← المشرف يقرأه ويوافق/يرفض
+// راجع: lib/core/stores/shared_permission_store.dart
 
 // ── Repository Implementation ────────────────────────────────────────────────
 class SupervisorRepositoryImpl implements SupervisorRepository {
@@ -258,7 +194,7 @@ class SupervisorRepositoryImpl implements SupervisorRepository {
   ) async {
     // API: GET /api/supervisor/permissions/$idNumber?status=pending
     await Future.delayed(const Duration(milliseconds: 400));
-    return _PermissionStore.pending;
+    return SharedPermissionStore.getPending();
   }
 
   // ── الأذونات المؤرشفة (موافق عليها + مرفوضة) ───────────────────────────
@@ -268,7 +204,7 @@ class SupervisorRepositoryImpl implements SupervisorRepository {
   ) async {
     // API: GET /api/supervisor/permissions/$idNumber?status=archived
     await Future.delayed(const Duration(milliseconds: 400));
-    return _PermissionStore.archived;
+    return SharedPermissionStore.getArchived();
   }
 
   // ── قبول إذن ────────────────────────────────────────────────────────────
@@ -276,7 +212,7 @@ class SupervisorRepositoryImpl implements SupervisorRepository {
   Future<void> approvePermission(String permissionId) async {
     // API: POST /api/supervisor/permissions/$permissionId/approve
     await Future.delayed(const Duration(milliseconds: 500));
-    _PermissionStore.approve(permissionId);
+    SharedPermissionStore.approve(permissionId);
   }
 
   // ── رفض إذن ─────────────────────────────────────────────────────────────
@@ -285,7 +221,7 @@ class SupervisorRepositoryImpl implements SupervisorRepository {
     // API: POST /api/supervisor/permissions/$permissionId/reject
     // body: { "note": note }
     await Future.delayed(const Duration(milliseconds: 500));
-    _PermissionStore.reject(permissionId, note);
+    SharedPermissionStore.reject(permissionId, note);
   }
 
   // ── إشعارات المركبات المرفوضة ────────────────────────────────────────────

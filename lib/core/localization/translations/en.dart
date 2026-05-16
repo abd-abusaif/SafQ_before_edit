@@ -298,4 +298,41 @@ const Map<String, String> enTranslations = {
   'exit': 'Exit',
   'sign_out': 'Sign Out',
   'sign_out_question': 'Do you want to sign out?',
+
+  // ── External Requests (Supervisor) ───────────────
+  'external_requests_title': 'External Requests',
+  'external_requests_nav': 'Requests',
+  'no_external_requests': 'No external requests',
+  'ext_type_passengers': 'Passengers',
+  'ext_type_parcel': 'Parcel',
+  'requester_name': 'Requester Name',
+  'requester_phone': 'Phone Number',
+  'requester_location': 'Passenger Location',
+  'passenger_count': 'Passenger Count',
+  'passengers_unit': 'passenger(s)',
+  'parcel_name': 'Parcel Name',
+  'parcel_details_label': 'Parcel Details',
+  'destination_label': 'Destination',
+  'details_label': 'Details',
+  'archived_tab': 'Archived',
+  'ext_req_approved_snack': 'Request approved and passenger notified',
+  'ext_req_rejected_snack': 'Request rejected and passenger notified',
+
+  // ── Exception (Supervisor) ────────────────────────
+  'exception_btn': 'Exception',
+  'exception_badge': 'Exception',
+  'exception_confirm_title': 'Confirm Exception',
+  'exception_confirm_msg': 'Grant exception and movement order for driver',
+  'exception_granted_snack': 'Exception granted for',
+
+  // ── Movement Order (Driver) ───────────────────────
+  'movement_order_title': 'Movement Order',
+  'movement_order_nav': 'Movement Order',
+  'no_movement_order': 'No Movement Order',
+  'no_movement_order_msg':
+      'No movement order has been issued yet.\\nAwait supervisor notification.',
+  'order_line_number': 'Line Number',
+  'departure_date': 'Departure Date',
+  'departure_time': 'Departure Time',
+  'tap_for_details': 'Tap for details',
 };
