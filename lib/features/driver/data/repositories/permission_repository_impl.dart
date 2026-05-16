@@ -53,4 +53,11 @@ class PermissionRepositoryImpl implements PermissionRepository {
       );
     }
   }
+
+  @override
+  Future<void> deleteCompletedPermissions(String idNumber) async {
+    // API: DELETE /api/driver/permissions?status=completed&idNumber=$idNumber
+    await Future.delayed(const Duration(milliseconds: 300));
+    SharedPermissionStore.deleteCompletedForDriver(idNumber);
+  }
 }

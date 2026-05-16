@@ -328,11 +328,32 @@ const Map<String, String> enTranslations = {
   // ── Movement Order (Driver) ───────────────────────
   'movement_order_title': 'Movement Order',
   'movement_order_nav': 'Movement Order',
-  'no_movement_order': 'No Movement Order',
+  'no_movement_order': 'No Movement Order Issued',
   'no_movement_order_msg':
-      'No movement order has been issued yet.\\nAwait supervisor notification.',
+      'No movement order has been issued for you yet. Orders will appear here once issued by the supervisor.',
   'order_line_number': 'Line Number',
   'departure_date': 'Departure Date',
   'departure_time': 'Departure Time',
   'tap_for_details': 'Tap for details',
+
+  // ── Delete movement order ─────────────────────────────────────────────────
+  'delete_order': 'Delete This Order',
+  'delete_order_confirm':
+      'Are you sure you want to delete this order? This cannot be undone.',
+  'order_deleted': 'Movement order deleted',
+  'delete_all_orders': 'Delete All Orders',
+  'delete_all_orders_confirm':
+      'Are you sure you want to delete all movement orders? This cannot be undone.',
+  'all_orders_deleted': 'All movement orders deleted',
+
+  // ── Filter & clear permissions ────────────────────────────────────────────
+  'filter_all': 'All',
+  'filter_approved': 'Approved',
+  'filter_rejected': 'Rejected',
+  'filter_pending': 'Pending',
+  'clear_completed': 'Clear Completed',
+  'clear_completed_confirm':
+      'All approved and rejected requests will be deleted. Pending requests will not be affected.',
+  'clear_completed_done': 'Completed requests deleted',
+  'no_permissions_filtered': 'No requests in this category',
 };

@@ -228,8 +228,9 @@ class DriverRepositoryImpl implements DriverRepository {
     // Returns null if no movement order is currently issued for this driver
     await Future.delayed(const Duration(milliseconds: 400));
 
-    // Mock: السائق رقم 5 عنده أمر حركة (استثناء)
-    // في الواقع: يُرجع null إذا لم يكن هناك أمر حركة
+    // Mock: إذا كان السائق قد حذف الأمر سابقاً، أرجع null
+    if (_clearedOrderDrivers.contains(idNumber)) return null;
+
     final now = DateTime.now();
     return MovementOrderEntity(
       id: 'mo-001',
@@ -243,4 +244,14 @@ class DriverRepositoryImpl implements DriverRepository {
       isException: true,
     );
   }
+
+  @override
+  Future<void> clearMovementOrder(String idNumber) async {
+    // API: DELETE /api/driver/movement-order/$idNumber
+    await Future.delayed(const Duration(milliseconds: 300));
+    _clearedOrderDrivers.add(idNumber);
+  }
 }
+
+// Mock store لتتبع الحذف
+final _clearedOrderDrivers = <String>{};

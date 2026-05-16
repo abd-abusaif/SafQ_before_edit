@@ -21,12 +21,21 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
   String _idNumber = '';
   bool _isLoading = false;
   bool _isSubmitting = false;
+  bool _isClearing = false;
   List<PermissionEntity> _permissions = [];
+  String _filter = 'all'; // 'all' | 'pending' | 'approved' | 'rejected'
 
   final String _todayDate = DateTime.now().toString().split(' ')[0];
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
   AppLocalizations get l => AppLocalizations.of(context);
+
+  List<PermissionEntity> get _filteredPermissions {
+    if (_filter == 'all') return _permissions;
+    return _permissions.where((p) => p.status == _filter).toList();
+  }
+
+  bool get _hasCompleted => _permissions.any((p) => p.status != 'pending');
 
   @override
   void initState() {
@@ -43,6 +52,99 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
       setState(() => _permissions = perms);
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _clearCompleted() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: l.isArabic ? TextDirection.rtl : TextDirection.ltr,
+        child: AlertDialog(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(
+              AppDimensions.cardRadius(context),
+            ),
+            side: const BorderSide(color: Colors.redAccent, width: 1),
+          ),
+          icon: Icon(
+            Icons.delete_sweep_outlined,
+            color: Colors.redAccent,
+            size: AppDimensions.iconXLarge(context),
+          ),
+          title: Text(
+            l.translate('clear_completed'),
+            textAlign: TextAlign.center,
+            style: GoogleFonts.cairo(
+              color: _isDark ? AppColors.textPrimary : Colors.black87,
+              fontWeight: FontWeight.bold,
+              fontSize: AppDimensions.fontLarge(context),
+            ),
+          ),
+          content: Text(
+            l.translate('clear_completed_confirm'),
+            textAlign: TextAlign.center,
+            style: GoogleFonts.cairo(
+              color: _isDark ? AppColors.textSecondary : Colors.black54,
+              fontSize: AppDimensions.fontMedium(context),
+              height: 1.6,
+            ),
+          ),
+          actionsAlignment: MainAxisAlignment.spaceEvenly,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(
+                l.cancel,
+                style: GoogleFonts.cairo(
+                  color: _isDark ? AppColors.textSecondary : Colors.black54,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    AppDimensions.cardRadius(context),
+                  ),
+                ),
+              ),
+              child: Text(
+                l.translate('clear_completed'),
+                style: GoogleFonts.cairo(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed == true && mounted) {
+      setState(() => _isClearing = true);
+      try {
+        await _repo.deleteCompletedPermissions(_idNumber);
+        await _loadData();
+        if (mounted) {
+          setState(() => _filter = 'all');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.green,
+              content: Text(
+                l.translate('clear_completed_done'),
+                style: GoogleFonts.cairo(color: Colors.white),
+                textAlign: l.isArabic ? TextAlign.right : TextAlign.left,
+              ),
+            ),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isClearing = false);
+      }
     }
   }
 
@@ -461,12 +563,76 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                 ],
         ),
         SizedBox(height: AppDimensions.spacingSmall(context)),
-        _permissions.isEmpty
+
+        // ── شريط الفلاتر + زر الحذف ──────────────────────────────────────
+        Row(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _filterChip(
+                      'all',
+                      l.translate('filter_all'),
+                      AppColors.primary,
+                    ),
+                    SizedBox(width: AppDimensions.spacingXSmall(context)),
+                    _filterChip(
+                      'pending',
+                      l.translate('filter_pending'),
+                      Colors.orange,
+                    ),
+                    SizedBox(width: AppDimensions.spacingXSmall(context)),
+                    _filterChip(
+                      'approved',
+                      l.translate('filter_approved'),
+                      Colors.green,
+                    ),
+                    SizedBox(width: AppDimensions.spacingXSmall(context)),
+                    _filterChip(
+                      'rejected',
+                      l.translate('filter_rejected'),
+                      Colors.redAccent,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (_hasCompleted) ...[
+              SizedBox(width: AppDimensions.spacingXSmall(context)),
+              _isClearing
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.redAccent,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : IconButton(
+                      onPressed: _clearCompleted,
+                      icon: Icon(
+                        Icons.delete_sweep_outlined,
+                        color: Colors.redAccent,
+                      ),
+                      tooltip: l.translate('clear_completed'),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+            ],
+          ],
+        ),
+        SizedBox(height: AppDimensions.spacingSmall(context)),
+
+        _filteredPermissions.isEmpty
             ? Center(
                 child: Padding(
                   padding: EdgeInsets.all(AppDimensions.spacingXLarge(context)),
                   child: Text(
-                    l.noPermissions,
+                    _permissions.isEmpty
+                        ? l.noPermissions
+                        : l.translate('no_permissions_filtered'),
                     style: GoogleFonts.cairo(
                       color: _isDark ? AppColors.textSecondary : Colors.black54,
                       fontSize: AppDimensions.fontMedium(context),
@@ -477,10 +643,48 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
             : ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: _permissions.length,
-                itemBuilder: (_, i) => _buildPermissionCard(_permissions[i]),
+                itemCount: _filteredPermissions.length,
+                itemBuilder: (_, i) =>
+                    _buildPermissionCard(_filteredPermissions[i]),
               ),
       ],
+    );
+  }
+
+  // ═══════════════════════════════════════════════
+  //  شريحة فلتر
+  // ═══════════════════════════════════════════════
+  Widget _filterChip(String value, String label, Color color) {
+    final isSelected = _filter == value;
+    return GestureDetector(
+      onTap: () => setState(() => _filter = value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: EdgeInsets.symmetric(
+          horizontal: AppDimensions.spacingSmall(context),
+          vertical: AppDimensions.spacingXSmall(context),
+        ),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withOpacity(0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected
+                ? color
+                : (_isDark ? Colors.white24 : Colors.black12),
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.cairo(
+            color: isSelected
+                ? color
+                : (_isDark ? AppColors.textSecondary : Colors.black54),
+            fontSize: AppDimensions.fontXSmall(context),
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
     );
   }
 

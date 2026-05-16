@@ -8,5 +8,7 @@ abstract class PermissionRepository {
     required String idNumber,
     required String reason,
     required String requestDate,
+    String? duration,
   });
+  Future<void> deleteCompletedPermissions(String idNumber);
 }

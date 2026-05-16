@@ -326,11 +326,30 @@ const Map<String, String> arTranslations = {
   // ── Movement Order (Driver) ───────────────────────
   'movement_order_title': 'أمر الحركة',
   'movement_order_nav': 'أمر الحركة',
-  'no_movement_order': 'لا يوجد أمر حركة',
-  'no_movement_order_msg':
-      'لم يصدر بحقك أمر حركة حتى الآن.\\nانتظر إشعار المشرف.',
+  'no_movement_order': 'لم يصدر بحقك أمر حركة حتى الآن',
+  'no_movement_order_msg': 'ستظهر أوامر الحركة هنا عند إصدارها من قِبل المشرف.',
   'order_line_number': 'رقم الخط',
   'departure_date': 'تاريخ المغادرة',
   'departure_time': 'وقت المغادرة',
   'tap_for_details': 'اضغط لعرض التفاصيل',
+
+  // ── حذف أمر الحركة ───────────────────────────────────────────────────────
+  'delete_order': 'حذف هذا الأمر',
+  'delete_order_confirm': 'هل أنت متأكد من حذف هذا الأمر؟ لا يمكن التراجع.',
+  'order_deleted': 'تم حذف أمر الحركة',
+  'delete_all_orders': 'حذف جميع الأوامر',
+  'delete_all_orders_confirm':
+      'هل أنت متأكد من حذف جميع أوامر الحركة؟ لا يمكن التراجع.',
+  'all_orders_deleted': 'تم حذف جميع أوامر الحركة',
+
+  // ── تصفية وحذف الأذونات ──────────────────────────────────────────────────
+  'filter_all': 'الكل',
+  'filter_approved': 'مقبولة',
+  'filter_rejected': 'مرفوضة',
+  'filter_pending': 'قيد الانتظار',
+  'clear_completed': 'حذف المكتملة',
+  'clear_completed_confirm':
+      'سيتم حذف جميع الطلبات المقبولة والمرفوضة. الطلبات قيد الانتظار لن تُحذف.',
+  'clear_completed_done': 'تم حذف الطلبات المكتملة',
+  'no_permissions_filtered': 'لا توجد طلبات في هذا التصنيف',
 };

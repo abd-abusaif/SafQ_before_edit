@@ -170,6 +170,13 @@ class SharedPermissionStore {
       );
     }
   }
+
+  /// السائق يحذف طلباته المكتملة (مقبولة + مرفوضة) — الـ pending تبقى
+  static void deleteCompletedForDriver(String idNumber) {
+    _records.removeWhere(
+      (r) => r.driverIdNumber == idNumber && r.status != 'pending',
+    );
+  }
 }
 
 // ── النموذج الداخلي الموحّد ─────────────────────────────────────────────────

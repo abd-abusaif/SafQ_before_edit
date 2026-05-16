@@ -21,4 +21,5 @@ abstract class DriverRepository {
   /// أمر الحركة الخاص بالسائق (إن وُجد)
   /// API: GET /api/driver/movement-order/$idNumber
   Future<MovementOrderEntity?> getMovementOrder(String idNumber);
+  Future<void> clearMovementOrder(String idNumber);
 }

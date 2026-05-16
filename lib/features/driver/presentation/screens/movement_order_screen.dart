@@ -21,6 +21,8 @@ class _MovementOrderScreenState extends State<MovementOrderScreen> {
   final _repo = DriverRepositoryImpl();
   MovementOrderEntity? _order;
   bool _isLoading = true;
+  bool _isDeletingAll = false; // زر الـ AppBar — حذف الكل
+  bool _isDeletingOne = false; // زر داخل الكارد — حذف هذا الأمر
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
   AppLocalizations get l => AppLocalizations.of(context);
@@ -39,6 +41,134 @@ class _MovementOrderScreenState extends State<MovementOrderScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  // ── حذف جميع أوامر الحركة (زر AppBar) ───────────────────────────────────
+  Future<void> _confirmDeleteAll() async {
+    final confirmed = await _showDeleteDialog(
+      title: l.translate('delete_all_orders'),
+      message: l.translate('delete_all_orders_confirm'),
+    );
+    if (confirmed == true && mounted) {
+      setState(() => _isDeletingAll = true);
+      try {
+        await _repo.clearMovementOrder(widget.idNumber);
+        if (mounted) {
+          setState(() => _order = null);
+          _showSnack(l.translate('all_orders_deleted'));
+        }
+      } finally {
+        if (mounted) setState(() => _isDeletingAll = false);
+      }
+    }
+  }
+
+  // ── حذف هذا الأمر فقط (زر داخل الكارد) ─────────────────────────────────
+  Future<void> _confirmDeleteOne(MovementOrderEntity order) async {
+    final confirmed = await _showDeleteDialog(
+      title: l.translate('delete_order'),
+      message: l.translate('delete_order_confirm'),
+    );
+    if (confirmed == true && mounted) {
+      setState(() => _isDeletingOne = true);
+      try {
+        await _repo.clearMovementOrder(widget.idNumber);
+        if (mounted) {
+          setState(() => _order = null);
+          _showSnack(l.translate('order_deleted'));
+        }
+      } finally {
+        if (mounted) setState(() => _isDeletingOne = false);
+      }
+    }
+  }
+
+  Future<bool?> _showDeleteDialog({
+    required String title,
+    required String message,
+  }) {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: l.isArabic ? TextDirection.rtl : TextDirection.ltr,
+        child: AlertDialog(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(
+              AppDimensions.cardRadius(context),
+            ),
+            side: const BorderSide(color: Colors.redAccent, width: 1),
+          ),
+          icon: Icon(
+            Icons.delete_outline,
+            color: Colors.redAccent,
+            size: AppDimensions.iconXLarge(context),
+          ),
+          title: Text(
+            title,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.cairo(
+              color: _isDark ? AppColors.textPrimary : Colors.black87,
+              fontWeight: FontWeight.bold,
+              fontSize: AppDimensions.fontLarge(context),
+            ),
+          ),
+          content: Text(
+            message,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.cairo(
+              color: _isDark ? AppColors.textSecondary : Colors.black54,
+              fontSize: AppDimensions.fontMedium(context),
+              height: 1.6,
+            ),
+          ),
+          actionsAlignment: MainAxisAlignment.spaceEvenly,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(
+                l.cancel,
+                style: GoogleFonts.cairo(
+                  color: _isDark ? AppColors.textSecondary : Colors.black54,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    AppDimensions.cardRadius(context),
+                  ),
+                ),
+              ),
+              child: Text(
+                title,
+                style: GoogleFonts.cairo(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: AppDimensions.fontSmall(context),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.green,
+        content: Text(
+          msg,
+          style: GoogleFonts.cairo(color: Colors.white),
+          textAlign: l.isArabic ? TextAlign.right : TextAlign.left,
+        ),
+      ),
+    );
   }
 
   void _showDetails(MovementOrderEntity order) {
@@ -66,7 +196,6 @@ class _MovementOrderScreenState extends State<MovementOrderScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ── مقبض ─────────────────────────────────
               Center(
                 child: Container(
                   width: 40,
@@ -80,8 +209,6 @@ class _MovementOrderScreenState extends State<MovementOrderScreen> {
                   ),
                 ),
               ),
-
-              // ── عنوان الـ sheet ───────────────────────
               Row(
                 textDirection: TextDirection.ltr,
                 mainAxisAlignment: l.isArabic
@@ -121,8 +248,6 @@ class _MovementOrderScreenState extends State<MovementOrderScreen> {
                         ),
                       ],
               ),
-
-              // شارة الاستثناء
               if (order.isException) ...[
                 SizedBox(height: AppDimensions.spacingSmall(context)),
                 Container(
@@ -186,15 +311,12 @@ class _MovementOrderScreenState extends State<MovementOrderScreen> {
                   ),
                 ),
               ],
-
               SizedBox(height: AppDimensions.spacingMedium(context)),
               Divider(
                 color: _isDark ? Colors.white12 : Colors.black12,
                 height: 1,
               ),
               SizedBox(height: AppDimensions.spacingMedium(context)),
-
-              // ── الحقول الخمسة ─────────────────────────
               _detailRow(
                 Icons.confirmation_number_outlined,
                 l.translate('permit_vehicle'),
@@ -233,7 +355,6 @@ class _MovementOrderScreenState extends State<MovementOrderScreen> {
                 color,
                 isLtr: true,
               ),
-
               SizedBox(height: AppDimensions.spacingMedium(context)),
             ],
           ),
@@ -260,6 +381,28 @@ class _MovementOrderScreenState extends State<MovementOrderScreen> {
           ),
           centerTitle: true,
           automaticallyImplyLeading: false,
+          // ── زر الـ AppBar: حذف جميع أوامر الحركة ────────────────────────
+          actions: _order != null
+              ? [
+                  IconButton(
+                    onPressed: _isDeletingAll ? null : _confirmDeleteAll,
+                    tooltip: l.translate('delete_all_orders'),
+                    icon: _isDeletingAll
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.redAccent,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Icon(
+                            Icons.delete_sweep_outlined,
+                            color: Colors.redAccent,
+                          ),
+                  ),
+                ]
+              : null,
         ),
         body: _isLoading
             ? const Center(
@@ -280,7 +423,6 @@ class _MovementOrderScreenState extends State<MovementOrderScreen> {
     );
   }
 
-  // ── لا يوجد أمر حركة ─────────────────────────────────────────────────────
   Widget _buildNoOrder() {
     return SizedBox(
       width: double.infinity,
@@ -320,215 +462,241 @@ class _MovementOrderScreenState extends State<MovementOrderScreen> {
     );
   }
 
-  // ── الكارد المصغر (قابل للضغط) ───────────────────────────────────────────
   Widget _buildCompactCard(MovementOrderEntity order) {
     final color = order.isException ? Colors.orange : AppColors.primary;
 
-    return GestureDetector(
-      onTap: () => _showDetails(order),
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(
-            AppDimensions.cardRadius(context),
-          ),
-          border: Border.all(color: color.withOpacity(0.4), width: 1.5),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // ── رأس الكارد ────────────────────────────
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppDimensions.spacingMedium(context),
-                vertical: AppDimensions.spacingSmall(context),
+    return Column(
+      children: [
+        // ── الكارد الرئيسي ────────────────────────────────────────────────
+        GestureDetector(
+          onTap: () => _showDetails(order),
+          child: Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(
+                AppDimensions.cardRadius(context),
               ),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(AppDimensions.cardRadius(context)),
-                  topRight: Radius.circular(AppDimensions.cardRadius(context)),
-                ),
-              ),
-              child: Row(
-                textDirection: TextDirection.ltr,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // أيقونة + عنوان — يسار
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.directions_bus,
-                        color: color,
-                        size: AppDimensions.iconSmall(context),
-                      ),
-                      SizedBox(width: AppDimensions.spacingXSmall(context)),
-                      Text(
-                        l.translate('movement_order_title'),
-                        style: GoogleFonts.cairo(
-                          color: color,
-                          fontWeight: FontWeight.bold,
-                          fontSize: AppDimensions.fontSmall(context),
-                        ),
-                      ),
-                    ],
-                  ),
-                  // شارة استثناء أو سهم — يمين
-                  if (order.isException)
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppDimensions.spacingSmall(context),
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                          color: Colors.orange.withOpacity(0.5),
-                          width: 0.8,
-                        ),
-                      ),
-                      child: Text(
-                        l.translate('exception_badge'),
-                        style: GoogleFonts.cairo(
-                          color: Colors.orange,
-                          fontSize: AppDimensions.fontXSmall(context),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    )
-                  else
-                    Icon(
-                      Icons.chevron_right,
-                      color: color,
-                      size: AppDimensions.iconSmall(context),
-                    ),
-                ],
-              ),
+              border: Border.all(color: color.withOpacity(0.4), width: 1.5),
             ),
-
-            // ── معلومات مختصرة ─────────────────────────
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppDimensions.spacingMedium(context),
-                vertical: AppDimensions.spacingMedium(context),
-              ),
-              child: Row(
-                textDirection: TextDirection.ltr,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // يسار: وقت + تاريخ
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // رأس الكارد
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppDimensions.spacingMedium(context),
+                    vertical: AppDimensions.spacingSmall(context),
+                  ),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(
+                        AppDimensions.cardRadius(context),
+                      ),
+                      topRight: Radius.circular(
+                        AppDimensions.cardRadius(context),
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    textDirection: TextDirection.ltr,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Directionality(
-                        textDirection: TextDirection.ltr,
-                        child: Text(
-                          order.departureTime,
-                          style: GoogleFonts.cairo(
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.directions_bus,
                             color: color,
-                            fontWeight: FontWeight.bold,
-                            fontSize: AppDimensions.fontLarge(context),
+                            size: AppDimensions.iconSmall(context),
                           ),
-                        ),
-                      ),
-                      Directionality(
-                        textDirection: TextDirection.ltr,
-                        child: Text(
-                          order.departureDate,
-                          style: GoogleFonts.cairo(
-                            color: _isDark
-                                ? AppColors.textSecondary
-                                : Colors.black54,
-                            fontSize: AppDimensions.fontXSmall(context),
+                          SizedBox(width: AppDimensions.spacingXSmall(context)),
+                          Text(
+                            l.translate('movement_order_title'),
+                            style: GoogleFonts.cairo(
+                              color: color,
+                              fontWeight: FontWeight.bold,
+                              fontSize: AppDimensions.fontSmall(context),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
+                      if (order.isException)
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppDimensions.spacingSmall(context),
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: Colors.orange.withOpacity(0.5),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Text(
+                            l.translate('exception_badge'),
+                            style: GoogleFonts.cairo(
+                              color: Colors.orange,
+                              fontSize: AppDimensions.fontXSmall(context),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        )
+                      else
+                        Icon(
+                          Icons.chevron_right,
+                          color: color,
+                          size: AppDimensions.iconSmall(context),
+                        ),
                     ],
                   ),
-
-                  // يمين: رقم المركبة + المجرى
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisSize: MainAxisSize.min,
+                ),
+                // معلومات مختصرة
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppDimensions.spacingMedium(context),
+                    vertical: AppDimensions.spacingMedium(context),
+                  ),
+                  child: Row(
+                    textDirection: TextDirection.ltr,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Directionality(
-                        textDirection: TextDirection.ltr,
-                        child: Text(
-                          order.vehicleNumber,
-                          style: GoogleFonts.cairo(
-                            color: _isDark
-                                ? AppColors.textPrimary
-                                : Colors.black87,
-                            fontWeight: FontWeight.bold,
-                            fontSize: AppDimensions.fontMedium(context),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Directionality(
+                            textDirection: TextDirection.ltr,
+                            child: Text(
+                              order.departureTime,
+                              style: GoogleFonts.cairo(
+                                color: color,
+                                fontWeight: FontWeight.bold,
+                                fontSize: AppDimensions.fontLarge(context),
+                              ),
+                            ),
                           ),
-                        ),
+                          Directionality(
+                            textDirection: TextDirection.ltr,
+                            child: Text(
+                              order.departureDate,
+                              style: GoogleFonts.cairo(
+                                color: _isDark
+                                    ? AppColors.textSecondary
+                                    : Colors.black54,
+                                fontSize: AppDimensions.fontXSmall(context),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(height: 2),
-                      Text(
-                        '${order.lineFrom} ← ${order.lineTo}',
-                        style: GoogleFonts.cairo(
-                          color: _isDark
-                              ? AppColors.textSecondary
-                              : Colors.black54,
-                          fontSize: AppDimensions.fontXSmall(context),
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Directionality(
+                            textDirection: TextDirection.ltr,
+                            child: Text(
+                              order.vehicleNumber,
+                              style: GoogleFonts.cairo(
+                                color: _isDark
+                                    ? AppColors.textPrimary
+                                    : Colors.black87,
+                                fontWeight: FontWeight.bold,
+                                fontSize: AppDimensions.fontMedium(context),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${order.lineFrom} ← ${order.lineTo}',
+                            style: GoogleFonts.cairo(
+                              color: _isDark
+                                  ? AppColors.textSecondary
+                                  : Colors.black54,
+                              fontSize: AppDimensions.fontXSmall(context),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-
-            // ── نص اضغط للتفاصيل ──────────────────────
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.symmetric(
-                vertical: AppDimensions.spacingXSmall(context),
-              ),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.06),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(
-                    AppDimensions.cardRadius(context),
-                  ),
-                  bottomRight: Radius.circular(
-                    AppDimensions.cardRadius(context),
-                  ),
                 ),
-              ),
-              child: Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.touch_app_outlined,
-                      color: color.withOpacity(0.7),
-                      size: AppDimensions.iconSmall(context),
-                    ),
-                    SizedBox(width: AppDimensions.spacingXSmall(context)),
-                    Text(
-                      l.translate('tap_for_details'),
-                      style: GoogleFonts.cairo(
-                        color: color.withOpacity(0.7),
-                        fontSize: AppDimensions.fontXSmall(context),
+
+                // ── زر حذف هذا الأمر — داخل الكارد في الأسفل ──────────────
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withOpacity(0.06),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(
+                        AppDimensions.cardRadius(context),
+                      ),
+                      bottomRight: Radius.circular(
+                        AppDimensions.cardRadius(context),
                       ),
                     ),
-                  ],
+                    border: Border(
+                      top: BorderSide(
+                        color: Colors.redAccent.withOpacity(0.2),
+                        width: 0.8,
+                      ),
+                    ),
+                  ),
+                  child: TextButton.icon(
+                    onPressed: _isDeletingOne
+                        ? null
+                        : () => _confirmDeleteOne(order),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.symmetric(
+                        vertical: AppDimensions.spacingSmall(context),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(
+                            AppDimensions.cardRadius(context),
+                          ),
+                          bottomRight: Radius.circular(
+                            AppDimensions.cardRadius(context),
+                          ),
+                        ),
+                      ),
+                    ),
+                    icon: _isDeletingOne
+                        ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              color: Colors.redAccent,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Icon(
+                            Icons.delete_outline,
+                            color: Colors.redAccent,
+                            size: AppDimensions.iconSmall(context),
+                          ),
+                    label: Text(
+                      l.translate('delete_order'),
+                      style: GoogleFonts.cairo(
+                        color: Colors.redAccent,
+                        fontWeight: FontWeight.bold,
+                        fontSize: AppDimensions.fontSmall(context),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
-  // ── صف تفصيلي في الـ Bottom Sheet ────────────────────────────────────────
   Widget _detailRow(
     IconData icon,
     String label,
@@ -550,7 +718,6 @@ class _MovementOrderScreenState extends State<MovementOrderScreen> {
         ),
       ],
     );
-
     final valueWidget = isLtr
         ? Directionality(
             textDirection: TextDirection.ltr,
