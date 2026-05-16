@@ -7,9 +7,9 @@ import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/session_manager.dart';
 import '../../../driver/presentation/screens/driver_home_screen.dart';
-import '../../../supervisor/presentation/screens/supervisor_home_screen.dart';
-import '../../../security/presentation/screens/security_home_screen.dart';
 import '../../../shared/presentation/widgets/main_navigation.dart';
+import '../../../supervisor/presentation/screens/supervisor_main_navigation.dart';
+import '../../../security/presentation/screens/security_main_navigation.dart';
 import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -50,51 +50,66 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (session != null) {
       final role = session['role']!;
-      Widget homeScreen;
-
-      switch (role) {
-        case 'driver':
-          homeScreen = DriverHomeScreen(
-            driverName: session['name']!,
-            idNumber: session['idNumber']!,
-            lineFrom: session['lineFrom']!,
-            lineTo: session['lineTo']!,
-          );
-          break;
-        case 'supervisor':
-          homeScreen = SupervisorHomeScreen(
-            supervisorName: session['name']!,
-            idNumber: session['idNumber']!,
-          );
-          break;
-        case 'security':
-          homeScreen = SecurityHomeScreen(
-            securityName: session['name']!,
-            idNumber: session['idNumber']!,
-          );
-          break;
-        default:
-          homeScreen = DriverHomeScreen(
-            driverName: session['name']!,
-            idNumber: session['idNumber']!,
-            lineFrom: session['lineFrom']!,
-            lineTo: session['lineTo']!,
-          );
-      }
+      final name = session['name']!;
+      final idNumber = session['idNumber']!;
+      final currentPassword = session['currentPassword'] ?? '';
 
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => MainNavigation(
-            homeScreen: homeScreen,
-            driverName: session['name']!,
-            idNumber: session['idNumber']!,
-            role: role,
-            currentPassword: session['currentPassword']!,
-          ),
-        ),
-      );
+
+      switch (role) {
+        // ── السائق → MainNavigation ───────────────────────────────────────
+        case 'driver':
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => MainNavigation(
+                homeScreen: DriverHomeScreen(
+                  driverName: name,
+                  idNumber: idNumber,
+                  lineFrom: session['lineFrom'] ?? '',
+                  lineTo: session['lineTo'] ?? '',
+                ),
+                driverName: name,
+                idNumber: idNumber,
+                role: role,
+                currentPassword: currentPassword,
+              ),
+            ),
+          );
+          break;
+
+        // ── المشرف → SupervisorMainNavigation ────────────────────────────
+        case 'supervisor':
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SupervisorMainNavigation(
+                supervisorName: name,
+                idNumber: idNumber,
+              ),
+            ),
+          );
+          break;
+
+        // ── الأمن → SecurityMainNavigation ───────────────────────────────
+        case 'security':
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SecurityMainNavigation(
+                securityName: name,
+                idNumber: idNumber,
+              ),
+            ),
+          );
+          break;
+
+        default:
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+          );
+      }
     } else {
       if (!mounted) return;
       Navigator.pushReplacement(
@@ -124,11 +139,9 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // ── الشعار مع التوهج ──────────────
                 Stack(
                   alignment: Alignment.center,
                   children: [
-                    // طبقات التوهج المتدرجة
                     Container(
                       width: 180,
                       height: 180,
@@ -153,7 +166,6 @@ class _SplashScreenState extends State<SplashScreen>
                         color: Color(0x2EFFB800),
                       ),
                     ),
-                    // اللوغو
                     ClipRRect(
                       borderRadius: BorderRadius.circular(22),
                       child: Image.asset(
@@ -188,9 +200,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ],
                 ),
-
                 SizedBox(height: AppDimensions.spacingMedium(context)),
-
                 Text(
                   l.stationName,
                   textAlign: TextAlign.center,
@@ -199,9 +209,7 @@ class _SplashScreenState extends State<SplashScreen>
                     fontSize: AppDimensions.fontMedium(context),
                   ),
                 ),
-
                 SizedBox(height: AppDimensions.spacingSmall(context)),
-
                 Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: AppDimensions.spacingMedium(context),
@@ -223,11 +231,8 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
                 ),
-
                 SizedBox(height: AppDimensions.spacingXLarge(context)),
-
-                // ── مؤشر التحميل ──────────────────
-                SizedBox(
+                const SizedBox(
                   width: 28,
                   height: 28,
                   child: CircularProgressIndicator(

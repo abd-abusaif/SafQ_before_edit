@@ -6,6 +6,7 @@ import '../../domain/entities/supervisor_vehicle_entity.dart';
 import '../../domain/entities/supervisor_permission_entity.dart';
 import '../../domain/entities/rejected_vehicle_notification_entity.dart';
 import '../../domain/entities/line_detail_entity.dart';
+import '../../domain/entities/external_request_entity.dart';
 import '../../domain/repositories/supervisor_repository.dart';
 import '../../../../core/stores/shared_permission_store.dart';
 
@@ -44,6 +45,47 @@ class _NotificationStore {
 // ── ملاحظة: الأذونات تُدار الآن عبر SharedPermissionStore المشترك ────────────
 // السائق يرسل الإذن ← SharedPermissionStore ← المشرف يقرأه ويوافق/يرفض
 // راجع: lib/core/stores/shared_permission_store.dart
+
+// ── Shared store للطلبات الخارجية (Passengers ↔ SafQ) ──────────────────────
+class _ExternalRequestStore {
+  static final List<ExternalRequestEntity> _list = [
+    ExternalRequestEntity(
+      id: 'er1',
+      requesterName: 'سامر أبو عيشة',
+      requesterPhone: '0599441122',
+      type: ExternalRequestType.passengers,
+      location: 'حي الشيخ',
+      destination: 'دورا',
+      passengersCount: 3,
+      status: 'pending',
+      createdAt: DateTime.now().subtract(const Duration(minutes: 15)),
+    ),
+    ExternalRequestEntity(
+      id: 'er2',
+      requesterName: 'منى الجعبري',
+      requesterPhone: '0598776655',
+      type: ExternalRequestType.parcel,
+      location: 'وسط البلد',
+      destination: 'الخليل الجديد',
+      parcelName: 'طرد متوسط',
+      parcelDetails: 'ملابس ومستلزمات منزلية',
+      status: 'approved',
+      createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+    ),
+  ];
+
+  static List<ExternalRequestEntity> get all => List.unmodifiable(_list);
+
+  static void approve(String id) {
+    final idx = _list.indexWhere((r) => r.id == id);
+    if (idx != -1) _list[idx] = _list[idx].copyWith(status: 'approved');
+  }
+
+  static void reject(String id) {
+    final idx = _list.indexWhere((r) => r.id == id);
+    if (idx != -1) _list[idx] = _list[idx].copyWith(status: 'rejected');
+  }
+}
 
 // ── Repository Implementation ────────────────────────────────────────────────
 class SupervisorRepositoryImpl implements SupervisorRepository {
@@ -240,5 +282,39 @@ class SupervisorRepositoryImpl implements SupervisorRepository {
     // API: POST /api/supervisor/rejected-notifications/$notificationId/handled
     await Future.delayed(const Duration(milliseconds: 400));
     _NotificationStore.markHandled(notificationId);
+  }
+
+  // ── استثناء مركبة (أمر الحركة الاستثنائي) ───────────────────────────────
+  @override
+  Future<void> grantException(String vehiclePlate) async {
+    // API: POST /api/supervisor/vehicles/$vehiclePlate/exception
+    await Future.delayed(const Duration(milliseconds: 500));
+    // Mock: تسجيل الاستثناء محلياً
+  }
+
+  // ── الطلبات الخارجية (ركاب / طرود من تطبيق Passengers) ──────────────────
+  @override
+  Future<List<ExternalRequestEntity>> getExternalRequests(
+    String idNumber,
+  ) async {
+    // API: GET /api/supervisor/external-requests/$idNumber
+    await Future.delayed(const Duration(milliseconds: 400));
+    return _ExternalRequestStore.all;
+  }
+
+  @override
+  Future<void> approveExternalRequest(String requestId) async {
+    // API: POST /api/supervisor/external-requests/$requestId/approve
+    // → Backend يرسل FCM notification لتطبيق Passengers
+    await Future.delayed(const Duration(milliseconds: 500));
+    _ExternalRequestStore.approve(requestId);
+  }
+
+  @override
+  Future<void> rejectExternalRequest(String requestId) async {
+    // API: POST /api/supervisor/external-requests/$requestId/reject
+    // → Backend يرسل FCM notification لتطبيق Passengers
+    await Future.delayed(const Duration(milliseconds: 500));
+    _ExternalRequestStore.reject(requestId);
   }
 }
