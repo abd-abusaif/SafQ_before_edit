@@ -30,17 +30,23 @@ class LineVehicleEntity {
   }
 }
 
-/// تفاصيل خط: أجرة الراكب + قائمة المركبات
+/// تفاصيل خط: عدد خانات التحميل + أجرة الراكب + قائمة المركبات
 class LineDetailEntity {
   final String lineId;
   final String lineName;
   final String passengerFare;
+
+  /// عدد خانات التحميل المسموحة لهذا الخط — يُحدَّد من الأدمن
+  /// API: line.allowed_loading_slots
+  final int allowedLoadingSlots;
+
   final List<LineVehicleEntity> vehicles;
 
   const LineDetailEntity({
     required this.lineId,
     required this.lineName,
     required this.passengerFare,
+    required this.allowedLoadingSlots,
     required this.vehicles,
   });
 }

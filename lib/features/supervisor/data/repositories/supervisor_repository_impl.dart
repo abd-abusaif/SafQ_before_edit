@@ -9,6 +9,7 @@ import '../../domain/entities/line_detail_entity.dart';
 import '../../domain/entities/external_request_entity.dart';
 import '../../domain/repositories/supervisor_repository.dart';
 import '../../../../core/stores/shared_permission_store.dart';
+import '../../../../core/stores/shared_movement_order_store.dart';
 
 // ── Shared store للإشعارات (محاكاة push notification) ──────────────────────
 class _NotificationStore {
@@ -200,6 +201,9 @@ class SupervisorRepositoryImpl implements SupervisorRepository {
       lineId: lineId,
       lineName: lineId == '1' ? 'الخليل / دورا' : 'الخليل / بيت لحم',
       passengerFare: lineId == '1' ? '5 ش' : '7 ش',
+      // عدد خانات التحميل المسموحة — يُحدّد من الأدمن
+      // API: line.allowed_loading_slots
+      allowedLoadingSlots: lineId == '1' ? 3 : 2,
       vehicles: const [
         LineVehicleEntity(
           vehiclePlate: 'أ ب ج 1234',
@@ -250,11 +254,40 @@ class SupervisorRepositoryImpl implements SupervisorRepository {
   }
 
   // ── قبول إذن ────────────────────────────────────────────────────────────
+  // عند الموافقة على إذن → يُصدر أمر حركة للسائق تلقائياً
   @override
   Future<void> approvePermission(String permissionId) async {
     // API: POST /api/supervisor/permissions/$permissionId/approve
     await Future.delayed(const Duration(milliseconds: 500));
     SharedPermissionStore.approve(permissionId);
+
+    // إصدار أمر الحركة في المتجر المشترك
+    final allPerms = [
+      ...SharedPermissionStore.getPending(),
+      ...SharedPermissionStore.getArchived(),
+    ];
+    final perm = allPerms.where((p) => p.id == permissionId).firstOrNull;
+    if (perm != null) {
+      final parts = perm.lineName.split(' / ');
+      SharedMovementOrderStore.issuePermission(
+        driverIdNumber: _driverIdFromPermission(permissionId),
+        vehiclePlate: perm.vehiclePlate,
+        lineId: '01',
+        lineNumber: '01',
+        lineFrom: parts.first,
+        lineTo: parts.length > 1 ? parts.last : perm.lineName,
+      );
+    }
+  }
+
+  String _driverIdFromPermission(String permissionId) {
+    const map = <String, String>{
+      'sp1': '409581394',
+      'sp2': '409581394',
+      'sp3': '409581394',
+      'sp4': '9031122334',
+    };
+    return map[permissionId] ?? '';
   }
 
   // ── رفض إذن ─────────────────────────────────────────────────────────────
@@ -285,11 +318,44 @@ class SupervisorRepositoryImpl implements SupervisorRepository {
   }
 
   // ── استثناء مركبة (أمر الحركة الاستثنائي) ───────────────────────────────
+  // يُستدعى من شاشة المشرف عند الضغط على زر "استثناء"
+  // يكتب أمر الحركة في المتجر المشترك فيقرأه السائق فوراً
   @override
   Future<void> grantException(String vehiclePlate) async {
     // API: POST /api/supervisor/vehicles/$vehiclePlate/exception
     await Future.delayed(const Duration(milliseconds: 500));
-    // Mock: تسجيل الاستثناء محلياً
+
+    // جلب بيانات المركبة من قائمة الدور لتعبئة أمر الحركة
+    final vehicles = await getQueueVehicles('supervisor', '01');
+    final vehicle = vehicles
+        .where((v) => v.vehiclePlate == vehiclePlate)
+        .firstOrNull;
+
+    if (vehicle != null) {
+      // Mock: معرف السائق — في الـ API الحقيقي يأتي مع بيانات المركبة
+      // نستخدم vehiclePlate كـ key للبحث
+      final driverIdNumber = _driverIdFromPlate(vehiclePlate);
+      SharedMovementOrderStore.issueException(
+        driverIdNumber: driverIdNumber,
+        vehiclePlate: vehiclePlate,
+        lineId: '01',
+        lineNumber: '01',
+        lineFrom: vehicle.lineFrom,
+        lineTo: vehicle.lineTo,
+      );
+    }
+  }
+
+  /// استخرج driverIdNumber من رقم المركبة — mock محلي
+  String _driverIdFromPlate(String vehiclePlate) {
+    // API: GET /api/vehicles/$vehiclePlate → driver_id_number
+    const map = <String, String>{
+      'أ ب ج 1234': '9021234567',
+      'ز ح ط 9012': '9031122334',
+      'م ن س 6677': '9045566778',
+      '6 2181-50': '409581394',
+    };
+    return map[vehiclePlate] ?? '';
   }
 
   // ── الطلبات الخارجية (ركاب / طرود من تطبيق Passengers) ──────────────────
